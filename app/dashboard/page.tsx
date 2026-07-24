@@ -1,9 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function PatientDashboardPage() {
+  const router = useRouter();
+  const supabase = createClient();
+
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [profile, setProfile] = useState<{ full_name: string; email: string } | null>(null);
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", user.id)
+          .single();
+        if (data) {
+          setProfile({
+            full_name: data.full_name || user.email?.split("@")[0] || "User",
+            email: data.email || user.email || "",
+          });
+        }
+      }
+    }
+    loadProfile();
+  }, [supabase]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   return (
     <div className="bg-surface text-on-surface">
@@ -21,7 +52,7 @@ export default function PatientDashboardPage() {
 <img className="w-full h-full object-cover" alt="A professional, high-resolution headshot of a middle-aged man with a friendly expression, wearing a clean white shirt. The background is a soft-focus clinical environment with bright, natural lighting. The visual style is crisp and modern, reflecting a premium healthcare service aesthetic with high clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP3m_RpwgywBCPVlVIIjssTjEVR_n47_M1fg3frbw_vc6rDdY4WHf7vhX6qHBFNbJ3WHOhBggDutfg_uWRWSy0b76BCSMP5j2ofqmVFcN4byu70ucC1VSoNNO-0Yonh8Zc193nK6SUANAcUueNDaVBDKKNnfylx3cTFTddRu_FhYGtdGipB0wikcEQRzQs87Untj1WbE9Xh8Wm2GVdQco8Z_s-kMgxci3MZSvojpZBqJgzYR7k7MveOPnMUrTDfAcG1cMeAMAGQag"/>
 </div>
 <div>
-<p className="font-label-md text-label-md text-on-surface">John Doe</p>
+<p className="font-label-md text-label-md text-on-surface">{profile ? profile.full_name : "Loading..."}</p>
 <p className="text-xs text-on-surface-variant">Verified Patient</p>
 </div>
 </div>
@@ -47,6 +78,13 @@ export default function PatientDashboardPage() {
 <span className="material-symbols-outlined" data-icon="person">person</span>
 <span className="font-label-md text-label-md">Health Profile</span>
 </a>
+<button
+  onClick={handleLogout}
+  className="flex items-center gap-3 px-4 py-3 text-error hover:bg-red-50 mx-2 rounded-full transition-all cursor-pointer text-left w-[calc(100%-1rem)] mt-2"
+>
+  <span className="material-symbols-outlined">logout</span>
+  <span className="font-label-md text-label-md font-bold">Sign Out</span>
+</button>
 </nav>
 <div className="px-4 mt-auto">
 <button className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-on-primary rounded-xl font-label-md hover:bg-primary-container transition-colors shadow-sm">
@@ -61,7 +99,7 @@ export default function PatientDashboardPage() {
 
 <header className="mb-xl flex flex-col md:flex-row md:items-end justify-between gap-md">
 <div>
-<h2 className="font-display text-display text-on-surface">Welcome back, John</h2>
+<h2 className="font-display text-display text-on-surface">Welcome back, {profile ? profile.full_name.split(" ")[0] : "Patient"}</h2>
 <p className="font-body-md text-on-surface-variant mt-1">Here is a summary of your current health and prescription status.</p>
 </div>
 <div className="flex gap-md">

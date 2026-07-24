@@ -1,11 +1,61 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
 export default function PharmacyInventoryDashboard() {
+  const router = useRouter();
+  const supabase = createClient();
+
+  const [profile, setProfile] = useState<{ full_name: string; email: string } | null>(null);
+  const [pharmacyName, setPharmacyName] = useState("City Central Pharmacy");
+
+  useEffect(() => {
+    async function loadProfileAndPharmacy() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Fetch profile
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", user.id)
+          .single();
+
+        if (profileData) {
+          setProfile({
+            full_name: profileData.full_name || user.email?.split("@")[0] || "User",
+            email: profileData.email || user.email || "",
+          });
+        }
+
+        // Fetch pharmacy owned by this owner
+        const { data: pharm } = await supabase
+          .from("pharmacies")
+          .select("name")
+          .eq("owner_id", user.id)
+          .maybeSingle();
+
+        if (pharm) {
+          setPharmacyName(pharm.name);
+        }
+      }
+    }
+    loadProfileAndPharmacy();
+  }, [supabase]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
   return (
     <div className="bg-surface text-on-surface">
 <div className="flex min-h-screen">
 
 <aside className="h-screen w-64 fixed left-0 top-0 bg-surface-container-low dark:bg-inverse-surface border-r border-outline-variant dark:border-outline flex flex-col py-md gap-sm z-50">
 <div className="px-md mb-xl">
-<h1 className="text-headline-sm font-headline-sm text-on-surface dark:text-on-primary-container">City Central Pharmacy</h1>
+<h1 className="text-headline-sm font-headline-sm text-on-surface dark:text-on-primary-container">{pharmacyName}</h1>
 <p className="text-body-sm font-body-sm text-on-surface-variant">Inventory Manager</p>
 </div>
 <nav className="flex-1 space-y-1">
@@ -29,6 +79,13 @@ export default function PharmacyInventoryDashboard() {
 <span className="material-symbols-outlined">settings</span>
 <span className="text-label-md font-label-md">Settings</span>
 </a>
+<button
+  onClick={handleLogout}
+  className="flex text-error hover:bg-red-50 rounded-full mx-2 px-4 py-3 items-center gap-3 transition-colors active:scale-95 duration-150 text-left w-[calc(100%-1rem)]"
+>
+  <span className="material-symbols-outlined">logout</span>
+  <span className="text-label-md font-label-md font-bold">Sign Out</span>
+</button>
 </nav>
 <div className="px-md mt-auto pt-md">
 <button className="w-full bg-primary text-on-primary py-3 rounded-xl flex items-center justify-center gap-2 font-label-md hover:bg-surface-tint transition-all active:scale-95">
@@ -68,7 +125,7 @@ export default function PharmacyInventoryDashboard() {
 <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors">notifications</button>
 <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors">location_on</button>
 <div className="h-8 w-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-md">
-                            JD
+                            {profile ? profile.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "JD"}
                         </div>
 </div>
 </div>
