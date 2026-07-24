@@ -33,20 +33,20 @@ export default function HomePage() {
 <h1 className="font-display text-display text-on-surface mb-lg leading-tight">Find critical medication in seconds.</h1>
 <p className="font-body-lg text-body-lg text-on-surface-variant mb-xl max-w-2xl mx-auto">Real-time inventory tracking across our network of certified partner pharmacies. No more calling around or unnecessary trips.</p>
 
-<div className="w-full max-w-3xl mx-auto bg-surface border border-outline-variant p-2 rounded-xl shadow-sm flex flex-col md:flex-row items-stretch gap-2">
+<form action="/search" method="GET" className="w-full max-w-3xl mx-auto bg-surface border border-outline-variant p-2 rounded-xl shadow-sm flex flex-col md:flex-row items-stretch gap-2">
 <div className="flex-grow flex items-center px-md gap-md">
 <span className="material-symbols-outlined text-outline">search</span>
-<input className="w-full border-none focus:ring-0 bg-transparent py-4 text-body-md placeholder:text-outline" placeholder="Search for medicine, brand, or pharmacy..." type="text"/>
+<input name="q" className="w-full border-none focus:ring-0 bg-transparent py-4 text-body-md placeholder:text-outline" placeholder="Search for medicine, brand, or pharmacy..." type="text"/>
 </div>
 <div className="hidden md:block w-px bg-outline-variant my-2"></div>
 <div className="flex items-center px-md gap-md group cursor-pointer">
 <span className="material-symbols-outlined text-outline">location_on</span>
 <span className="text-body-md text-on-surface-variant whitespace-nowrap">Current Location</span>
 </div>
-<button className="bg-primary text-on-primary px-xl py-4 rounded-lg font-headline-md hover:bg-primary/90 transition-all shadow-md">
+<button type="submit" className="bg-primary text-on-primary px-xl py-4 rounded-lg font-headline-md hover:bg-primary/90 transition-all shadow-md">
                         Search
                     </button>
-</div>
+</form>
 <div className="mt-xl flex flex-wrap justify-center gap-lg opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
 <span className="font-label-md flex items-center gap-xs"><span className="material-symbols-outlined text-sm">verified</span> Verified Stock</span>
 <span className="font-label-md flex items-center gap-xs"><span className="material-symbols-outlined text-sm">schedule</span> Real-time Updates</span>
