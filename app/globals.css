@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Material Symbols icon font baseline (loaded via next/font in layout.tsx) */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* --- Home / landing (screen1) --- */
+.bento-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.bento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+.glass-header {
+  backdrop-filter: blur(8px);
+  background-color: rgba(249, 249, 255, 0.8);
+}
+
+/* --- Search results (screen2) --- */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.clinical-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.clinical-card:hover {
+  border-color: #004ac6;
+  transform: translateY(-2px);
+}
+
+/* --- Pharmacy inventory dashboard (screen3) --- */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.zebra-row:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+/* --- Pharmacy detail page (screen4) --- */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
+}
+.high-contrast-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+@media (max-width: 768px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Login (screen5) --- */
+input:focus {
+  outline: none;
+  border-color: #004ac6 !important;
+  box-shadow: 0 0 0 2px rgba(0, 74, 198, 0.1);
+}
+
+/* --- Patient dashboard (screen6) --- */
+.sidebar-active {
+  background-color: #d0e1fb;
+  color: #54647a;
+  border-radius: 9999px;
+  margin: 0 0.5rem;
+}
+.clinical-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
