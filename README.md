@@ -1,37 +1,83 @@
 # MediFind
 
-Medicine Availability Finder — Next.js 14 (App Router) + Tailwind CSS + Supabase.
+Medicine Availability Finder — built with Next.js 14 (App Router), Tailwind CSS, and Supabase.
 
-Pages converted from Stitch designs:
-- `/` — Landing page
-- `/search` — Medicine search results (list/map toggle)
-- `/pharmacy/[id]` — Public pharmacy detail page
-- `/pharmacy/dashboard` — Pharmacy owner inventory dashboard
-- `/login` — Patient/pharmacy login
-- `/dashboard` — Patient dashboard
+MediFind connects patients with nearby pharmacies having critical medications in stock.
 
-## Setup
+---
 
-```bash
-npm install
-cp .env.local.example .env.local   # then fill in your Supabase URL + anon key
-npm run dev
-```
+## 🚀 Current Architecture & Features
 
-Open http://localhost:3000
+### 1. Authentication & Security
+- **Authentication**: Fully integrated with Supabase Auth (`signInWithPassword` and `signUp`).
+- **Role-based Redirection**: Directs users based on their account type:
+  - `user` (Patient) $\rightarrow$ `/dashboard`
+  - `pharmacy` (Pharmacy Owner) $\rightarrow$ `/pharmacy/dashboard`
+  - `admin` $\rightarrow$ `/admin`
+- **Route Protection**: Middleware dynamically protects sensitive pages and redirects unauthenticated users back to `/login`.
+- **User Sessions**: Middleware automatically refreshes Supabase session tokens on incoming requests.
 
-## Supabase
+### 2. Live Medicine Search (`/search`)
+- **FTS Querying**: Searches the `pharmacy_stock` table using a full-text search index against `medicines.name`.
+- **Custom Filters**: Allows filtering by availability (In Stock Only), max distance (radius slider), maximum price, and pharmacy operating types.
+- **Location & Distance**: Uses the Haversine formula to compute and sort pharmacies by proximity.
+- **Interactive Map**: Renders search results dynamically as map pins on a high-fidelity mock map with hover overlays detailing the pharmacy name and medicine price.
 
-- `lib/supabase/client.ts` — browser client (use in Client Components)
-- `lib/supabase/server.ts` — server client (use in Server Components / Route Handlers)
-- `middleware.ts` — refreshes the auth session cookie on every request
+### 3. Pharmacy Inventory Dashboard (`/pharmacy/dashboard`)
+- **Inventory CRUD**: Pharmacy owners can add new medicine stock (using existing catalog items or adding custom medicines), edit quantity/price details, and delete entries.
+- **Onboarding Wizard**: Prompts new pharmacy owners to configure their store profile (name, address, hours, location coordinates) upon first login.
+- **Real-time Inventory**: Implements Supabase Realtime PG channel subscription to refresh the dashboard instantly whenever stock modifications occur.
 
-## Next steps
+### 4. Public Pharmacy Details (`/pharmacy/[id]`)
+- **Server Components**: Uses server-side database fetching to load pharmacy profile details and real stock level counts.
+- **Interactive Links**: Connects direct phone dialing (`tel:`) and map navigation directions links dynamically.
 
-1. Create your Supabase project and run a migration for `users`, `pharmacies`,
-   `medicines`, and `pharmacy_stock` tables (with Row Level Security policies
-   per role: patient / pharmacy / admin).
-2. Wire up real auth on `/login` (currently static markup).
-3. Replace the placeholder `lh3.googleusercontent.com` images with your own
-   assets or Supabase Storage URLs.
-4. Connect `/search` and `/pharmacy/[id]` to live Supabase queries.
+---
+
+## 🛠️ Tech Stack & Structure
+
+- **Core**: Next.js 14 (App Router) & React 18
+- **Styling**: Tailwind CSS
+- **Database & Auth**: Supabase SSR (`@supabase/ssr` & `@supabase/supabase-js`)
+- **Icons**: Material Symbols Outlined
+- **Database Schema**:
+  - `profiles`: role-based user attributes (Patient/Pharmacy/Admin)
+  - `pharmacies`: store details linked to an owner
+  - `medicines`: master medicine catalog
+  - `pharmacy_stock`: inventory levels with trigger-synced stock status
+
+---
+
+## ⚙️ Setup & Installation
+
+1. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Configuration**:
+   Ensure `.env.local` contains your Supabase credentials:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   ```
+
+3. **Run Locally**:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🔮 What's Next? (Roadmap)
+
+1. **Real Payment / Reservation Checkout**:
+   - Integrate Stripe to allow patients to pay or lock in their reservation securely.
+2. **Prescription Upload Processing**:
+   - Wire up the dashboard "Upload Prescription" button to save files directly to a Supabase Storage bucket.
+   - Implement OCR/AI-extract to read uploaded files and auto-fill search criteria.
+3. **Admin Dashboard (`/admin`)**:
+   - Design and build out the administrator view to moderate reviews, inspect catalog additions, and review pharmacy applications.
+4. **Actual Geolocation Tracking**:
+   - Replace the mock map with a live Google Maps or Mapbox GL map component using actual geolocation watch updates.
