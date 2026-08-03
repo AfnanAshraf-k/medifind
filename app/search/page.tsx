@@ -36,6 +36,8 @@ function SearchResultsContent() {
   const supabase = createClient();
 
   const searchQuery = searchParams.get("q") || "";
+  const paramLat = searchParams.get("lat");
+  const paramLng = searchParams.get("lng");
 
   // View state
   const [view, setView] = useState<"list" | "map">("list");
@@ -55,22 +57,34 @@ function SearchResultsContent() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState({ lat: 51.5074, lng: -0.1278 }); // Default London
+  const [locationLabel, setLocationLabel] = useState("London Center (Default)");
+  const [mockLocationType, setMockLocationType] = useState("current");
 
+  // Load initial coordinates from parameters or browser geolocation
   useEffect(() => {
-    if (navigator.geolocation) {
+    if (paramLat && paramLng) {
+      setUserLocation({
+        lat: parseFloat(paramLat),
+        lng: parseFloat(paramLng),
+      });
+      setLocationLabel("GPS Coordinates (from Landing Page)");
+      setMockLocationType("current");
+    } else if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           });
+          setLocationLabel("Your Current GPS Location");
         },
         () => {
           console.log("Using default location coordinates.");
+          setLocationLabel("London Center (Default)");
         }
       );
     }
-  }, []);
+  }, [paramLat, paramLng]);
 
   useEffect(() => {
     async function fetchResults() {
@@ -157,6 +171,37 @@ function SearchResultsContent() {
     fetchResults();
   }, [searchQuery, inStockOnly, maxDistance, maxPrice, openNow, twentyFourHours, driveThru, userLocation, supabase]);
 
+  const handleMockLocationChange = (type: string) => {
+    setMockLocationType(type);
+    if (type === "london") {
+      setUserLocation({ lat: 51.5074, lng: -0.1278 });
+      setLocationLabel("London Center Mock");
+    } else if (type === "birmingham") {
+      setUserLocation({ lat: 52.4862, lng: -1.8904 });
+      setLocationLabel("Birmingham Mock");
+    } else if (type === "manchester") {
+      setUserLocation({ lat: 53.4808, lng: -2.2426 });
+      setLocationLabel("Manchester Mock");
+    } else if (type === "current") {
+      if (navigator.geolocation) {
+        setLocationLabel("Locating browser GPS...");
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setUserLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+            setLocationLabel("Your Current GPS Location");
+          },
+          () => {
+            setUserLocation({ lat: 51.5074, lng: -0.1278 });
+            setLocationLabel("London Center (Fallback)");
+          }
+        );
+      }
+    }
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     router.push(`/search?q=${encodeURIComponent(searchInput)}`);
@@ -227,7 +272,7 @@ function SearchResultsContent() {
             </h1>
             <p className="text-on-surface-variant text-body-md">
               Showing {results.length} {results.length === 1 ? "pharmacy" : "pharmacies"} near{" "}
-              <span className="font-semibold text-on-surface">London, UK</span>
+              <span className="font-semibold text-on-surface">{locationLabel}</span>
             </p>
           </div>
           <div className="flex items-center gap-sm bg-surface-container rounded-full p-1 border border-outline-variant">
@@ -264,6 +309,26 @@ function SearchResultsContent() {
           <aside className="w-full lg:w-72 flex-shrink-0 space-y-xl">
             <section className="bg-white p-lg rounded-xl border border-outline-variant">
               <h2 className="text-label-md text-on-surface uppercase tracking-wider mb-md">Filters</h2>
+
+              {/* GPS Coordinate Mocking Selector */}
+              <div className="mb-lg border-b border-outline-variant pb-md">
+                <span className="font-label-md text-on-surface block mb-sm">GPS Location Mock</span>
+                <select
+                  className="w-full border border-outline-variant rounded-lg p-2.5 bg-surface-container-lowest text-on-surface text-body-sm mb-2 focus:ring-1 focus:ring-primary"
+                  value={mockLocationType}
+                  onChange={(e) => handleMockLocationChange(e.target.value)}
+                >
+                  <option value="current">📍 Browser Geolocation</option>
+                  <option value="london">🇬🇧 London Center (51.5074, -0.1278)</option>
+                  <option value="birmingham">🇬🇧 Birmingham (52.4862, -1.8904)</option>
+                  <option value="manchester">🇬🇧 Manchester (53.4808, -2.2426)</option>
+                </select>
+                <div className="text-[10px] text-on-surface-variant font-mono bg-surface-container-low p-2 rounded border border-outline-variant/30 leading-relaxed">
+                  <p className="truncate"><span className="font-bold">Label:</span> {locationLabel}</p>
+                  <p><span className="font-bold">Lat:</span> {userLocation.lat.toFixed(4)}</p>
+                  <p><span className="font-bold">Lng:</span> {userLocation.lng.toFixed(4)}</p>
+                </div>
+              </div>
 
               <div className="mb-lg">
                 <label className="flex items-center gap-3 cursor-pointer group">
@@ -492,12 +557,26 @@ function SearchResultsContent() {
             }`}
           >
             <div className="absolute inset-0 bg-surface-container-low flex items-center justify-center relative bg-[url('https://lh3.googleusercontent.com/aida-public/AB6AXuAw1k9cE-Az6bdwr9tTiaGST8aZgSa4PTJPOCHEQMuWGYYgqnZ0ZkHiinVtNFeagiv6uU84lCfWTwA_4I-Inii_yhewwEhO6i-cNtz1I8GQBVpi_SGntFDyP4SoEfMnLHCPL9FnF5w1DlT1wqPNMXDuuKWx-gIJv3CElVcZyH83upHLMOajYXzyw7vGEv4yl2IuYVRgOj6sSquVC9gPU49uOaxbbeTL5gsYJ2naT5Y-PveVT7BbXytSVaHPiuARXF6NSMsNGRBe0UY')] bg-cover bg-center">
+              {/* Pulsing "You Are Here" center pin */}
+              <div
+                style={{ top: "50%", left: "50%" }}
+                className="absolute flex flex-col items-center z-30 pointer-events-none -translate-x-1/2 -translate-y-1/2"
+              >
+                <div className="bg-primary text-on-primary px-2 py-0.5 rounded shadow text-[9px] font-bold whitespace-nowrap mb-1">
+                  You Are Here
+                </div>
+                <div className="w-5 h-5 bg-primary border-2 border-white rounded-full flex items-center justify-center animate-ping absolute opacity-70"></div>
+                <div className="w-3.5 h-3.5 bg-primary border-2 border-white rounded-full"></div>
+              </div>
+
               {results.map((item, idx) => {
-                // Pseudo random positioning on the London center map based on latitude/longitude offset
-                const latDiff = (item.pharmacy.lat || 51.5074) - 51.5074;
-                const lngDiff = (item.pharmacy.lng || -0.1278) - -0.1278;
-                const topVal = Math.max(10, Math.min(90, 50 - latDiff * 350));
-                const leftVal = Math.max(10, Math.min(90, 50 + lngDiff * 450));
+                // Lat/lng offset mapping from userLocation center
+                const latDiff = (item.pharmacy.lat || 51.5074) - userLocation.lat;
+                const lngDiff = (item.pharmacy.lng || -0.1278) - userLocation.lng;
+
+                // Scale offset percentages relative to map center
+                const topVal = Math.max(10, Math.min(90, 50 - latDiff * 450));
+                const leftVal = Math.max(10, Math.min(90, 50 + lngDiff * 600));
 
                 return (
                   <div
@@ -506,7 +585,7 @@ function SearchResultsContent() {
                     className="absolute group flex flex-col items-center"
                   >
                     <div className="bg-white px-2 py-1 rounded shadow-md border border-outline-variant text-[10px] font-bold text-on-surface whitespace-nowrap hidden group-hover:block z-20">
-                      {item.pharmacy.name} - £{item.price.toFixed(2)}
+                      {item.pharmacy.name} - £{item.price.toFixed(2)} ({item.distance.toFixed(1)}m away)
                     </div>
                     <span className="material-symbols-outlined text-primary text-3xl cursor-pointer hover:scale-110 transition-transform" style={{ fontVariationSettings: "'FILL' 1" }}>
                       location_on
