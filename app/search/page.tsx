@@ -39,8 +39,26 @@ function SearchResultsContent() {
   const paramLat = searchParams.get("lat");
   const paramLng = searchParams.get("lng");
 
+  // Auth User state
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
   // View state
   const [view, setView] = useState<"list" | "map">("list");
+
+  // Reservation states
+  const [selectedItemToReserve, setSelectedItemToReserve] = useState<any>(null);
+  const [reserveQuantity, setReserveQuantity] = useState(1);
+  const [reservingStatus, setReservingStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [reservingError, setReservingError] = useState("");
+
+  // Get current user session
+  useEffect(() => {
+    async function getUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    }
+    getUser();
+  }, [supabase]);
 
   // Filters state
   const [inStockOnly, setInStockOnly] = useState(true);
@@ -214,6 +232,43 @@ function SearchResultsContent() {
     setOpenNow(false);
     setTwentyFourHours(false);
     setDriveThru(false);
+  };
+
+  const handleConfirmReservation = async () => {
+    if (!currentUser) {
+      router.push("/login?redirect=/search");
+      return;
+    }
+
+    setReservingStatus("loading");
+    setReservingError("");
+
+    try {
+      const { data, error } = await supabase
+        .from("reservations")
+        .insert({
+          user_id: currentUser.id,
+          pharmacy_stock_id: selectedItemToReserve.id,
+          quantity: reserveQuantity,
+          status: "pending",
+        })
+        .select();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setReservingStatus("success");
+      setTimeout(() => {
+        setSelectedItemToReserve(null);
+        setReservingStatus("idle");
+        router.push("/dashboard");
+      }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      setReservingStatus("error");
+      setReservingError(err.message || "Failed to make reservation. Check if database tables are applied.");
+    }
   };
 
   return (
@@ -527,10 +582,25 @@ function SearchResultsContent() {
                           {pharmacy.is_open ? "Open Now" : "Closed"}
                         </span>
                       </div>
-                      <div className="mt-lg flex gap-md">
+                      <div className="mt-lg flex gap-md flex-wrap">
+                        <button
+                          onClick={() => {
+                            if (!currentUser) {
+                              router.push(`/login?redirect=/search?q=${encodeURIComponent(searchQuery)}`);
+                            } else {
+                              setSelectedItemToReserve(item);
+                              setReserveQuantity(1);
+                              setReservingStatus("idle");
+                            }
+                          }}
+                          disabled={item.status === "out_of_stock"}
+                          className="flex-grow md:flex-none text-center bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md hover:opacity-90 active:scale-95 transition-all disabled:opacity-55 shadow"
+                        >
+                          {item.status === "out_of_stock" ? "Out of Stock" : "Reserve Medicine"}
+                        </button>
                         <Link
                           href={`/pharmacy/${pharmacy.id}`}
-                          className="flex-grow md:flex-none text-center bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md hover:opacity-90 active:scale-95 transition-all"
+                          className="flex-grow md:flex-none text-center border border-outline-variant text-on-surface px-6 py-2.5 rounded-lg font-label-md hover:bg-surface-variant active:scale-95 transition-all"
                         >
                           View Pharmacy Detail
                         </Link>
@@ -628,6 +698,80 @@ function SearchResultsContent() {
           </div>
         </div>
       </footer>
+
+      {/* Reservation Confirmation Modal */}
+      {selectedItemToReserve && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-lg border border-outline-variant shadow-2xl animate-in fade-in zoom-in-95 duration-150 text-on-surface">
+            <h3 className="text-headline-md font-bold mb-sm">Confirm Reservation</h3>
+            <p className="text-body-md text-on-surface-variant mb-md">
+              You are reserving <span className="font-semibold text-on-surface">{selectedItemToReserve.medicine.name}</span> from <span className="font-semibold text-on-surface">{selectedItemToReserve.pharmacy.name}</span>.
+            </p>
+
+            <div className="bg-surface-container-low p-md rounded-xl border border-outline-variant/50 mb-md space-y-sm">
+              <div className="flex justify-between text-body-sm">
+                <span className="text-on-surface-variant">Price per unit:</span>
+                <span className="font-semibold text-on-surface">£{selectedItemToReserve.price.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-body-sm">
+                <span className="text-on-surface-variant">Quantity:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={reserveQuantity <= 1}
+                    onClick={() => setReserveQuantity(q => q - 1)}
+                    className="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center hover:bg-surface-container-high disabled:opacity-50 font-bold"
+                  >
+                    -
+                  </button>
+                  <span className="font-semibold text-on-surface px-2 w-6 text-center">{reserveQuantity}</span>
+                  <button
+                    disabled={reserveQuantity >= selectedItemToReserve.quantity}
+                    onClick={() => setReserveQuantity(q => q + 1)}
+                    className="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center hover:bg-surface-container-high disabled:opacity-50 font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <div className="border-t border-outline-variant/30 pt-sm mt-sm flex justify-between text-body-md font-bold">
+                <span className="text-on-surface">Total Estimated:</span>
+                <span className="text-primary">£{(selectedItemToReserve.price * reserveQuantity).toFixed(2)}</span>
+              </div>
+            </div>
+
+            {reservingStatus === "success" && (
+              <div className="mb-md p-md bg-green-50 text-green-700 text-body-sm rounded-xl border border-green-200 flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">check_circle</span>
+                <span>Reservation placed successfully! Redirecting...</span>
+              </div>
+            )}
+
+            {reservingStatus === "error" && (
+              <div className="mb-md p-md bg-red-50 text-red-700 text-body-sm rounded-xl border border-red-200 flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">error</span>
+                <span className="truncate">{reservingError}</span>
+              </div>
+            )}
+
+            <div className="flex gap-md">
+              <button
+                disabled={reservingStatus === "loading" || reservingStatus === "success"}
+                onClick={() => setSelectedItemToReserve(null)}
+                className="flex-1 py-3 border border-outline-variant text-on-surface rounded-xl hover:bg-surface-container transition-all font-label-md active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={reservingStatus === "loading" || reservingStatus === "success"}
+                onClick={handleConfirmReservation}
+                className="flex-1 py-3 bg-primary text-on-primary rounded-xl hover:bg-primary/95 transition-all font-label-md active:scale-95 shadow-md flex items-center justify-center gap-2"
+              >
+                {reservingStatus === "loading" ? "Reserving..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

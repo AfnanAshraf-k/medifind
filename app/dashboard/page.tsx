@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function PatientDashboardPage() {
@@ -10,9 +11,39 @@ export default function PatientDashboardPage() {
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profile, setProfile] = useState<{ full_name: string; email: string } | null>(null);
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [loadingReservations, setLoadingReservations] = useState(true);
+
+  const loadReservations = async (userId: string) => {
+    setLoadingReservations(true);
+    try {
+      const { data, error } = await supabase
+        .from("reservations")
+        .select(`
+          id,
+          quantity,
+          status,
+          created_at,
+          pharmacy_stock:pharmacy_stock_id(
+            price,
+            pharmacy:pharmacies(*),
+            medicine:medicines(*)
+          )
+        `)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setReservations(data || []);
+    } catch (err) {
+      console.error("Error loading reservations:", err);
+    } finally {
+      setLoadingReservations(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadProfile() {
+    async function loadProfileAndData() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
@@ -26,10 +57,30 @@ export default function PatientDashboardPage() {
             email: data.email || user.email || "",
           });
         }
+        loadReservations(user.id);
       }
     }
-    loadProfile();
+    loadProfileAndData();
   }, [supabase]);
+
+  const handleCancelReservation = async (reservationId: string) => {
+    if (!confirm("Are you sure you want to cancel this reservation?")) return;
+    try {
+      const { error } = await supabase
+        .from("reservations")
+        .update({ status: "cancelled" })
+        .eq("id", reservationId);
+
+      if (error) throw error;
+
+      // Reload
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) loadReservations(user.id);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Failed to cancel reservation");
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -103,14 +154,18 @@ export default function PatientDashboardPage() {
 <p className="font-body-md text-on-surface-variant mt-1">Here is a summary of your current health and prescription status.</p>
 </div>
 <div className="flex gap-md">
+<Link href="/search">
 <button className="flex items-center gap-2 px-6 py-3 bg-white border border-outline-variant rounded-xl font-label-md text-primary hover:bg-surface-container transition-all clinical-shadow">
 <span className="material-symbols-outlined">search</span>
                         Find Medicine
                     </button>
+</Link>
+<Link href="/search">
 <button className="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-xl font-label-md hover:shadow-lg transition-all">
 <span className="material-symbols-outlined">add</span>
                         New Order
                     </button>
+</Link>
 </div>
 </header>
 
@@ -120,66 +175,103 @@ export default function PatientDashboardPage() {
 <div className="bg-white border border-outline-variant rounded-xl p-6 h-full clinical-shadow">
 <div className="flex items-center justify-between mb-6">
 <h3 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
-<span className="material-symbols-outlined text-primary">pill</span>
-                                Active Prescriptions
+<span className="material-symbols-outlined text-primary">receipt_long</span>
+                                My Medicine Reservations
                             </h3>
-<a className="text-primary font-label-md hover:underline" href="#">View All</a>
+<button 
+  onClick={() => {
+    async function reload() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) loadReservations(user.id);
+    }
+    reload();
+  }}
+  className="text-primary font-label-md hover:underline flex items-center gap-1"
+>
+  <span className="material-symbols-outlined text-sm">refresh</span> Refresh
+</button>
 </div>
 <div className="space-y-4">
 
-<div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-outline-variant rounded-lg hover:border-primary-container transition-colors group">
-<div className="flex items-center gap-4 mb-3 md:mb-0">
-<div className="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary">
-<span className="material-symbols-outlined text-2xl" style={{fontVariationSettings: '\'FILL\' 1'}}>medical_services</span>
-</div>
-<div>
-<p className="font-label-md text-on-surface">Lisinopril 10mg</p>
-<p className="text-xs text-on-surface-variant">Take 1 tablet daily</p>
-</div>
-</div>
-<div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-<span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">Ready for Pickup</span>
-<button className="text-primary-container group-hover:translate-x-1 transition-transform">
-<span className="material-symbols-outlined">chevron_right</span>
-</button>
-</div>
-</div>
+{loadingReservations ? (
+  <div className="text-center py-8 text-on-surface-variant text-body-sm">Loading your reservations...</div>
+) : reservations.length === 0 ? (
+  <div className="text-center py-8 text-on-surface-variant text-body-sm border border-dashed border-outline-variant rounded-lg p-md">
+    <p>No reservations placed yet.</p>
+    <Link
+      href="/search"
+      className="text-primary font-label-sm hover:underline mt-2 inline-block"
+    >
+      Find medicine and reserve now &rarr;
+    </Link>
+  </div>
+) : (
+  reservations.map((res: any) => {
+    const stock = res.pharmacy_stock;
+    const medicine = Array.isArray(stock?.medicine) ? stock.medicine[0] : stock?.medicine;
+    const pharmacy = Array.isArray(stock?.pharmacy) ? stock.pharmacy[0] : stock?.pharmacy;
 
-<div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-outline-variant rounded-lg hover:border-primary-container transition-colors group">
-<div className="flex items-center gap-4 mb-3 md:mb-0">
-<div className="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary">
-<span className="material-symbols-outlined text-2xl" style={{fontVariationSettings: '\'FILL\' 1'}}>medication</span>
-</div>
-<div>
-<p className="font-label-md text-on-surface">Atorvastatin 20mg</p>
-<p className="text-xs text-on-surface-variant">Take at bedtime</p>
-</div>
-</div>
-<div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-<span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold border border-amber-200">Refill Due (3 days)</span>
-<button className="px-4 py-1.5 bg-primary-container text-white rounded-lg text-xs font-bold hover:bg-primary transition-colors">
-                                        Refill Now
-                                    </button>
-</div>
-</div>
+    if (!medicine || !pharmacy) return null;
 
-<div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-outline-variant rounded-lg hover:border-primary-container transition-colors group opacity-75">
-<div className="flex items-center gap-4 mb-3 md:mb-0">
-<div className="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary">
-<span className="material-symbols-outlined text-2xl">science</span>
-</div>
-<div>
-<p className="font-label-md text-on-surface">Amoxicillin 500mg</p>
-<p className="text-xs text-on-surface-variant">Course completed Aug 12</p>
-</div>
-</div>
-<div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-<span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-bold border border-slate-200">Archived</span>
-<button className="text-primary-container group-hover:translate-x-1 transition-transform">
-<span className="material-symbols-outlined">chevron_right</span>
-</button>
-</div>
-</div>
+    const statusColors: any = {
+      pending: "bg-amber-100 text-amber-700 border-amber-200",
+      ready: "bg-green-100 text-green-700 border-green-200",
+      collected: "bg-blue-100 text-blue-700 border-blue-200",
+      cancelled: "bg-slate-100 text-slate-500 border-slate-200",
+    };
+
+    const statusLabels: any = {
+      pending: "Pending Review",
+      ready: "Ready for Pickup",
+      collected: "Collected",
+      cancelled: "Cancelled",
+    };
+
+    return (
+      <div
+        key={res.id}
+        className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-outline-variant rounded-lg hover:border-primary-container transition-colors group gap-3 text-on-surface"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
+            <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+              medical_services
+            </span>
+          </div>
+          <div>
+            <p className="font-label-md text-on-surface font-semibold">{medicine.name}</p>
+            <p className="text-xs text-on-surface-variant">
+              From: {pharmacy.name} • Qty: {res.quantity}
+            </p>
+            <p className="text-[10px] text-outline mt-0.5">
+              Reserved on {new Date(res.created_at).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+          <div className="text-right mr-2 hidden md:block">
+            <span className="font-semibold text-on-surface text-body-sm">£{(stock.price * res.quantity).toFixed(2)}</span>
+            <p className="text-[10px] text-on-surface-variant">Total Price</p>
+          </div>
+          <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusColors[res.status] || statusColors.pending}`}>
+            {statusLabels[res.status] || res.status}
+          </span>
+          
+          {(res.status === "pending" || res.status === "ready") && (
+            <button
+              onClick={() => handleCancelReservation(res.id)}
+              className="px-3 py-1 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold transition-colors active:scale-95"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  })
+)}
+
 </div>
 </div>
 </section>

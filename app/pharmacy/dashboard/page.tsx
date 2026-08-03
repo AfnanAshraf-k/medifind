@@ -19,6 +19,10 @@ export default function PharmacyInventoryDashboard() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [activeTab, setActiveTab] = useState<"inventory" | "orders">("inventory");
+  const [ordersList, setOrdersList] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
   // Profile and pharmacy states
   const [profile, setProfile] = useState<{ full_name: string; email: string } | null>(null);
   const [myPharmacy, setMyPharmacy] = useState<any>(null);
@@ -103,6 +107,52 @@ export default function PharmacyInventoryDashboard() {
     setInventoryLoading(false);
   };
 
+  const loadOrders = async () => {
+    if (!myPharmacy?.id) return;
+    setOrdersLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("reservations")
+        .select(`
+          id,
+          quantity,
+          status,
+          created_at,
+          user:profiles(id, full_name, email),
+          pharmacy_stock:pharmacy_stock_id!inner(
+            id,
+            price,
+            medicine:medicines(*)
+          )
+        `)
+        .eq("pharmacy_stock.pharmacy_id", myPharmacy.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setOrdersList(data || []);
+    } catch (err) {
+      console.error("Error loading orders:", err);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from("reservations")
+        .update({ status: newStatus })
+        .eq("id", orderId);
+
+      if (error) throw error;
+      loadOrders();
+      loadInventory();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Failed to update order status");
+    }
+  };
+
   const loadMedicinesCatalog = async () => {
     const { data, error } = await supabase
       .from("medicines")
@@ -121,8 +171,9 @@ export default function PharmacyInventoryDashboard() {
     if (myPharmacy?.id) {
       loadInventory();
       loadMedicinesCatalog();
+      loadOrders();
     }
-  }, [myPharmacy?.id]);
+  }, [myPharmacy?.id, activeTab]);
 
   // Realtime subscription setup
   useEffect(() => {
@@ -144,8 +195,25 @@ export default function PharmacyInventoryDashboard() {
       )
       .subscribe();
 
+    const ordersChannel = supabase
+      .channel("orders-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "reservations",
+        },
+        () => {
+          loadOrders();
+          loadInventory();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(ordersChannel);
     };
   }, [myPharmacy?.id, supabase]);
 
@@ -391,42 +459,34 @@ export default function PharmacyInventoryDashboard() {
             </h1>
             <p className="text-body-sm font-body-sm text-on-surface-variant">Inventory Manager</p>
           </div>
-          <nav className="flex-1 space-y-1">
-            <a
-              className="bg-secondary-container text-on-secondary-container rounded-full mx-2 px-4 py-3 flex items-center gap-3 active:scale-95 transition-transform duration-150"
-              href="#"
-            >
-              <span className="material-symbols-outlined">dashboard</span>
-              <span className="text-label-md font-label-md">Dashboard</span>
-            </a>
-
-            <a
-              className="text-on-surface-variant hover:bg-surface-variant rounded-full mx-2 px-4 py-3 flex items-center gap-3 transition-colors active:scale-95 duration-150"
-              href="#"
+          <nav className="flex-grow space-y-1">
+            <button
+              onClick={() => setActiveTab("inventory")}
+              className={`w-[calc(100%-1rem)] rounded-full mx-2 px-4 py-3 flex items-center gap-3 active:scale-95 transition-transform duration-150 text-left ${
+                activeTab === "inventory"
+                  ? "bg-secondary-container text-on-secondary-container font-bold shadow-sm"
+                  : "text-on-surface-variant hover:bg-surface-variant"
+              }`}
             >
               <span className="material-symbols-outlined">inventory_2</span>
-              <span className="text-label-md font-label-md">Inventory</span>
-            </a>
+              <span className="text-label-md font-label-md">Inventory Catalog</span>
+            </button>
 
-            <a
-              className="text-on-surface-variant hover:bg-surface-variant rounded-full mx-2 px-4 py-3 flex items-center gap-3 transition-colors active:scale-95 duration-150"
-              href="#"
+            <button
+              onClick={() => setActiveTab("orders")}
+              className={`w-[calc(100%-1rem)] rounded-full mx-2 px-4 py-3 flex items-center gap-3 active:scale-95 transition-transform duration-150 text-left ${
+                activeTab === "orders"
+                  ? "bg-secondary-container text-on-secondary-container font-bold shadow-sm"
+                  : "text-on-surface-variant hover:bg-surface-variant"
+              }`}
             >
               <span className="material-symbols-outlined">receipt_long</span>
-              <span className="text-label-md font-label-md">Orders</span>
-            </a>
-
-            <a
-              className="text-on-surface-variant hover:bg-surface-variant rounded-full mx-2 px-4 py-3 flex items-center gap-3 transition-colors active:scale-95 duration-150"
-              href="#"
-            >
-              <span className="material-symbols-outlined">settings</span>
-              <span className="text-label-md font-label-md">Settings</span>
-            </a>
+              <span className="text-label-md font-label-md">Patient Reservations</span>
+            </button>
 
             <button
               onClick={handleLogout}
-              className="flex text-error hover:bg-red-50 rounded-full mx-2 px-4 py-3 items-center gap-3 transition-colors active:scale-95 duration-150 text-left w-[calc(100%-1rem)]"
+              className="flex text-error hover:bg-red-50 rounded-full mx-2 px-4 py-3 items-center gap-3 transition-colors active:scale-95 duration-150 text-left w-[calc(100%-1rem)] mt-2"
             >
               <span className="material-symbols-outlined">logout</span>
               <span className="text-label-md font-label-md font-bold">Sign Out</span>
@@ -603,143 +663,265 @@ export default function PharmacyInventoryDashboard() {
               </div>
             </section>
 
-            <section className="bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+            <section className="bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm text-on-surface">
               <div className="px-xl py-lg border-b border-outline-variant flex flex-col md:flex-row md:items-center justify-between gap-md bg-surface-container-low">
-                <h4 className="text-headline-md font-headline-md">Inventory Master List</h4>
+                <h4 className="text-headline-md font-headline-md">
+                  {activeTab === "inventory" ? "Inventory Master List" : "Active Medicine Reservations"}
+                </h4>
                 <div className="flex gap-sm">
                   <button className="px-md py-2 bg-surface border border-outline rounded-lg text-body-sm flex items-center gap-2 hover:bg-surface-container transition-colors">
                     <span className="material-symbols-outlined text-[18px]">filter_list</span>
                     Filter
                   </button>
-                  <button className="px-md py-2 bg-surface border border-outline rounded-lg text-body-sm flex items-center gap-2 hover:bg-surface-container transition-colors">
-                    <span className="material-symbols-outlined text-[18px]">sort</span>
-                    Sort
+                  <button 
+                    onClick={() => {
+                      if (activeTab === "inventory") loadInventory();
+                      else loadOrders();
+                    }}
+                    className="px-md py-2 bg-surface border border-outline rounded-lg text-body-sm flex items-center gap-2 hover:bg-surface-container transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">refresh</span>
+                    Refresh
                   </button>
                 </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-surface-container-highest border-b border-outline-variant">
-                      <th className="px-xl py-md text-label-md font-label-md text-on-surface-variant">Medicine Name</th>
-                      <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">SKU</th>
-                      <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Category</th>
-                      <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Stock Level</th>
-                      <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Last Updated</th>
-                      <th className="px-xl py-md text-label-md font-label-md text-on-surface-variant text-right">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-body-sm divide-y divide-outline-variant">
-                    {inventoryLoading ? (
-                      <tr>
-                        <td colSpan={6} className="px-xl py-8 text-center text-on-surface-variant">
-                          Loading inventory...
-                        </td>
-                      </tr>
-                    ) : stockList.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="px-xl py-8 text-center text-on-surface-variant">
-                          No items in inventory. Click "New Entry" to add medicine stock.
-                        </td>
-                      </tr>
-                    ) : (
-                      stockList.map((item) => (
-                        <tr key={item.id} className="zebra-row hover:bg-primary-fixed/30 transition-colors">
-                          <td className="px-xl py-md">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded bg-secondary-container flex items-center justify-center">
-                                <span className="material-symbols-outlined text-secondary">
-                                  {item.medicine.category?.toLowerCase().includes("diabet") ||
-                                  item.medicine.category?.toLowerCase().includes("insulin")
-                                    ? "vaccines"
-                                    : "pill"}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="font-bold text-on-surface">{item.medicine.name}</p>
-                                <p className="text-xs text-on-surface-variant">
-                                  {item.medicine.generic_name || "Generic"}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-md py-md font-mono text-xs">{item.id.slice(0, 8).toUpperCase()}</td>
-                          <td className="px-md py-md">
-                            <span className="px-2 py-1 bg-surface-container-high rounded text-label-sm">
-                              {item.medicine.category || "Uncategorized"}
-                            </span>
-                          </td>
-                          <td className="px-md py-md">
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold">{item.quantity} units</span>
-                                <span
-                                  className={`px-2 py-0.5 text-[10px] rounded-full font-bold uppercase ${
-                                    item.status === "in_stock"
-                                      ? "bg-green-100 text-green-700"
-                                      : item.status === "low_stock"
-                                      ? "bg-amber-100 text-amber-700"
-                                      : "bg-error-container text-on-error-container"
-                                  }`}
-                                >
-                                  {item.status === "in_stock"
-                                    ? "Optimal"
-                                    : item.status === "low_stock"
-                                    ? "Low Stock"
-                                    : "Out of Stock"}
-                                </span>
-                              </div>
-                              <div className="w-32 bg-outline-variant rounded-full h-1.5 overflow-hidden">
-                                <div
-                                  className={`h-full ${
-                                    item.status === "in_stock"
-                                      ? "bg-green-500"
-                                      : item.status === "low_stock"
-                                      ? "bg-amber-500"
-                                      : "bg-error"
-                                  }`}
-                                  style={{ width: `${Math.min(100, Math.max(5, (item.quantity / 500) * 100))}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-md py-md text-on-surface-variant">{formatTime(item.updated_at)}</td>
-                          <td className="px-xl py-md text-right">
-                            <button
-                              onClick={() => openEditModal(item)}
-                              className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors"
-                            >
-                              edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteStock(item.id)}
-                              className="material-symbols-outlined text-on-surface-variant hover:text-error ml-2 transition-colors"
-                            >
-                              delete
-                            </button>
-                          </td>
+
+              {activeTab === "inventory" ? (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-surface-container-highest border-b border-outline-variant">
+                          <th className="px-xl py-md text-label-md font-label-md text-on-surface-variant">Medicine Name</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">SKU</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Category</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Stock Level</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Last Updated</th>
+                          <th className="px-xl py-md text-label-md font-label-md text-on-surface-variant text-right">
+                            Actions
+                          </th>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <div className="px-xl py-md border-t border-outline-variant bg-surface-container-lowest flex items-center justify-between">
-                <span className="text-body-sm text-on-surface-variant">
-                  Showing 1-{stockList.length} of {stockList.length} items
-                </span>
-                <div className="flex items-center gap-sm">
-                  <button className="p-2 border border-outline rounded hover:bg-surface-container transition-colors disabled:opacity-50" disabled>
-                    <span className="material-symbols-outlined">chevron_left</span>
-                  </button>
-                  <button className="px-4 py-2 bg-primary text-on-primary rounded font-label-sm">1</button>
-                  <button className="p-2 border border-outline rounded hover:bg-surface-container transition-colors" disabled>
-                    <span className="material-symbols-outlined">chevron_right</span>
-                  </button>
-                </div>
-              </div>
+                      </thead>
+                      <tbody className="text-body-sm divide-y divide-outline-variant">
+                        {inventoryLoading ? (
+                          <tr>
+                            <td colSpan={6} className="px-xl py-8 text-center text-on-surface-variant">
+                              Loading inventory...
+                            </td>
+                          </tr>
+                        ) : stockList.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-xl py-8 text-center text-on-surface-variant">
+                              No items in inventory. Click "New Entry" to add medicine stock.
+                            </td>
+                          </tr>
+                        ) : (
+                          stockList.map((item) => (
+                            <tr key={item.id} className="zebra-row hover:bg-primary-fixed/30 transition-colors">
+                              <td className="px-xl py-md">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded bg-secondary-container flex items-center justify-center animate-in fade-in">
+                                    <span className="material-symbols-outlined text-secondary">
+                                      {item.medicine.category?.toLowerCase().includes("diabet") ||
+                                      item.medicine.category?.toLowerCase().includes("insulin")
+                                        ? "vaccines"
+                                        : "pill"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-on-surface">{item.medicine.name}</p>
+                                    <p className="text-xs text-on-surface-variant">
+                                      {item.medicine.generic_name || "Generic"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-md py-md font-mono text-xs">{item.id.slice(0, 8).toUpperCase()}</td>
+                              <td className="px-md py-md">
+                                <span className="px-2 py-1 bg-surface-container-high rounded text-label-sm">
+                                  {item.medicine.category || "Uncategorized"}
+                                </span>
+                              </td>
+                              <td className="px-md py-md">
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold">{item.quantity} units</span>
+                                    <span
+                                      className={`px-2 py-0.5 text-[10px] rounded-full font-bold uppercase ${
+                                        item.status === "in_stock"
+                                          ? "bg-green-100 text-green-700"
+                                          : item.status === "low_stock"
+                                          ? "bg-amber-100 text-amber-700"
+                                          : "bg-error-container text-on-error-container"
+                                      }`}
+                                    >
+                                      {item.status === "in_stock"
+                                        ? "Optimal"
+                                        : item.status === "low_stock"
+                                        ? "Low Stock"
+                                        : "Out of Stock"}
+                                    </span>
+                                  </div>
+                                  <div className="w-32 bg-outline-variant rounded-full h-1.5 overflow-hidden">
+                                    <div
+                                      className={`h-full ${
+                                        item.status === "in_stock"
+                                          ? "bg-green-500"
+                                          : item.status === "low_stock"
+                                          ? "bg-amber-500"
+                                          : "bg-error"
+                                      }`}
+                                      style={{ width: `${Math.min(100, Math.max(5, (item.quantity / 500) * 100))}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-md py-md text-on-surface-variant">{formatTime(item.updated_at)}</td>
+                              <td className="px-xl py-md text-right">
+                                <button
+                                  onClick={() => openEditModal(item)}
+                                  className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors"
+                                >
+                                  edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteStock(item.id)}
+                                  className="material-symbols-outlined text-on-surface-variant hover:text-error ml-2 transition-colors"
+                                >
+                                  delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="px-xl py-md border-t border-outline-variant bg-surface-container-lowest flex items-center justify-between">
+                    <span className="text-body-sm text-on-surface-variant">
+                      Showing 1-{stockList.length} of {stockList.length} items
+                    </span>
+                    <div className="flex items-center gap-sm">
+                      <button className="p-2 border border-outline rounded hover:bg-surface-container transition-colors disabled:opacity-50" disabled>
+                        <span className="material-symbols-outlined">chevron_left</span>
+                      </button>
+                      <button className="px-4 py-2 bg-primary text-on-primary rounded font-label-sm">1</button>
+                      <button className="p-2 border border-outline rounded hover:bg-surface-container transition-colors" disabled>
+                        <span className="material-symbols-outlined">chevron_right</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="overflow-x-auto animate-in fade-in duration-200">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-surface-container-highest border-b border-outline-variant">
+                          <th className="px-xl py-md text-label-md font-label-md text-on-surface-variant">Patient Name</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Medicine Name</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Quantity</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Total Price</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Reserved Date</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Status</th>
+                          <th className="px-xl py-md text-label-md font-label-md text-on-surface-variant text-right">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-body-sm divide-y divide-outline-variant">
+                        {ordersLoading ? (
+                          <tr>
+                            <td colSpan={7} className="px-xl py-8 text-center text-on-surface-variant">
+                              Loading reservations...
+                            </td>
+                          </tr>
+                        ) : ordersList.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-xl py-8 text-center text-on-surface-variant">
+                              No active reservations found for your pharmacy.
+                            </td>
+                          </tr>
+                        ) : (
+                          ordersList.map((order) => {
+                            const stock = order.pharmacy_stock;
+                            const medicine = Array.isArray(stock?.medicine) ? stock.medicine[0] : stock?.medicine;
+                            const patient = order.user;
+
+                            if (!medicine) return null;
+
+                            const statusColors: any = {
+                              pending: "bg-amber-100 text-amber-700 border-amber-200",
+                              ready: "bg-green-100 text-green-700 border-green-200",
+                              collected: "bg-blue-100 text-blue-700 border-blue-200",
+                              cancelled: "bg-slate-100 text-slate-500 border-slate-200",
+                            };
+
+                            const statusLabels: any = {
+                              pending: "Pending Review",
+                              ready: "Ready for Pickup",
+                              collected: "Collected",
+                              cancelled: "Cancelled",
+                            };
+
+                            return (
+                              <tr key={order.id} className="zebra-row hover:bg-primary-fixed/30 transition-colors">
+                                <td className="px-xl py-md font-semibold">
+                                  {patient?.full_name || patient?.email || "Unknown Patient"}
+                                </td>
+                                <td className="px-md py-md font-bold text-primary">{medicine.name}</td>
+                                <td className="px-md py-md font-bold">{order.quantity} units</td>
+                                <td className="px-md py-md font-bold text-on-surface">
+                                  £{(stock.price * order.quantity).toFixed(2)}
+                                </td>
+                                <td className="px-md py-md text-on-surface-variant">
+                                  {new Date(order.created_at).toLocaleDateString()}
+                                </td>
+                                <td className="px-md py-md">
+                                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusColors[order.status] || "bg-amber-100 text-amber-700"}`}>
+                                    {statusLabels[order.status] || order.status}
+                                  </span>
+                                </td>
+                                <td className="px-xl py-md text-right space-x-2">
+                                  {order.status === "pending" && (
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, "ready")}
+                                      className="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold transition-all active:scale-95"
+                                    >
+                                      Ready
+                                    </button>
+                                  )}
+                                  {order.status === "ready" && (
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, "collected")}
+                                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold transition-all active:scale-95"
+                                    >
+                                      Collected
+                                    </button>
+                                  )}
+                                  {(order.status === "pending" || order.status === "ready") && (
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, "cancelled")}
+                                      className="px-2.5 py-1 border border-red-200 text-red-600 hover:bg-red-50 rounded text-xs font-bold transition-all active:scale-95"
+                                    >
+                                      Cancel
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="px-xl py-md border-t border-outline-variant bg-surface-container-lowest flex items-center justify-between">
+                    <span className="text-body-sm text-on-surface-variant">
+                      Showing 1-{ordersList.length} of {ordersList.length} reservations
+                    </span>
+                  </div>
+                </>
+              )}
             </section>
 
             <footer className="w-full mt-xl bg-surface-container-highest dark:bg-inverse-surface flat no shadows">
