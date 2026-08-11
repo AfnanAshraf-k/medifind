@@ -512,10 +512,11 @@ function SearchResultsContent() {
               results.map((item, idx) => {
                 const pharmacy = item.pharmacy;
                 const medicine = item.medicine;
-                const imageSrc =
+                const imageSrc = pharmacy.image_url || (
                   idx % 2 === 0
                     ? "https://lh3.googleusercontent.com/aida-public/AB6AXuBCAtnmXXIcZgT-iOX2LNNgXmDCl2jFlB-XaVKfi9OzKDX4CSKmmBV8uoKy3Z9ACMieoncmzz-6XT8GcK1bioJ7jmFOPGA0Pbn-ooQSvgGq4dvXOpBI_bEltlaH72yW7bJIdMf36Bxe0tunGkWiUqGDCtJTl-7on_eaRG4lAX3sG3K2cTpLSO9WIDmGk36SJMFZj0pBa4nIZGvNhnQSwSt7IB3cbxMWbj7FN66MwrkejhOejIhyX6VZ"
-                    : "https://lh3.googleusercontent.com/aida-public/AB6AXuC0rYWp4mw0JgrSezLWtKyD1tmuQiUwDVHFzV9KgS1irpFVdXWqYFB7kqdJ4UUM5BsZ_M6t4fMWPeHm8gokjpJFpMn541U0fILHYUFOyZyDficKilB2mY-QM5bS50xORtO6HQaOapJV2Ng7p3AIc4UtY6bTnlIuqEbKnqJJlVA1eCKgX8N2N4U0Ys_-1SBGC4HsyYFWqI5LyGX-nMNVWab0rRL2qxsgPNQDETlUhFxaR_VMQV2su9-_";
+                    : "https://lh3.googleusercontent.com/aida-public/AB6AXuC0rYWp4mw0JgrSezLWtKyD1tmuQiUwDVHFzV9KgS1irpFVdXWqYFB7kqdJ4UUM5BsZ_M6t4fMWPeHm8gokjpJFpMn541U0fILHYUFOyZyDficKilB2mY-QM5bS50xORtO6HQaOapJV2Ng7p3AIc4UtY6bTnlIuqEbKnqJJlVA1eCKgX8N2N4U0Ys_-1SBGC4HsyYFWqI5LyGX-nMNVWab0rRL2qxsgPNQDETlUhFxaR_VMQV2su9-_"
+                );
 
                 return (
                   <div

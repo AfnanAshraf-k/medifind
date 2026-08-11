@@ -267,8 +267,7 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
                 <div
                   className="w-full h-full bg-cover bg-center"
                   style={{
-                    backgroundImage:
-                      "url('https://lh3.googleusercontent.com/aida-public/AB6AXuB9N4oLeMsO6sY8GDKq9i-zTUJDvDKaYPSZLPZhyWmMImzLyQAckfHtQF4ZT2xhgBNac-vfNiaOMoc7xrJoAsMi6Y0e9XMeTbg06r5S7qTD-6FkXm3CjDVEueIITC_WDKN-XTqKlDVgwA8vk-cK_ik23bMoRYp5ZmhsbzhwWggqclzMbueL-tysCaOamgI21p2QgmFb04CmXqHy6ptrpIPtfoiym39tF0G-GIQFmWWl4e9ybbp_5xNR')",
+                    backgroundImage: `url(${pharmacy.image_url || 'https://lh3.googleusercontent.com/aida-public/AB6AXuB9N4oLeMsO6sY8GDKq9i-zTUJDvDKaYPSZLPZhyWmMImzLyQAckfHtQF4ZT2xhgBNac-vfNiaOMoc7xrJoAsMi6Y0e9XMeTbg06r5S7qTD-6FkXm3CjDVEueIITC_WDKN-XTqKlDVgwA8vk-cK_ik23bMoRYp5ZmhsbzhwWggqclzMbueL-tysCaOamgI21p2QgmFb04CmXqHy6ptrpIPtfoiym39tF0G-GIQFmWWl4e9ybbp_5xNR'})`
                   }}
                 ></div>
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -311,10 +310,11 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
                 filteredStock.map((item, idx) => {
                   const medicine: any = Array.isArray(item.medicine) ? item.medicine[0] : item.medicine;
                   if (!medicine) return null;
-                  const imageSrc =
+                  const imageSrc = medicine.image_url || (
                     idx % 2 === 0
                       ? "https://lh3.googleusercontent.com/aida-public/AB6AXuAct7G014GC-w1ErH0expxnATavMY3qxuB5ssd6ob7lruuecDgI1uPApTUk7DKrwYjLjNhfwUkN9a1SB8HZ8dE69u0QJ-Qv2kZGu_zkBdHEWOrJjcPVhE6yDk88VMmlEXq53ILiOVtDnDBYXgFxRLvyxEDonvpdBhOzWdijQVuhesousap3DK1KBTqj7GzJNEo3PUVcLrOBjKQ7UukoggpETGJQuaQNiYhkMAEs1-HKi1egPCN_IYb_"
-                      : "https://lh3.googleusercontent.com/aida-public/AB6AXuDVN88hsrko5PvEE4w8b3M1AxIKO3VlvQWFX1nyfuP1H_Qjc5c9zzzpvN_loMQNc8fFARqjTexzGipodcsCLBG1O1aYLAzSvEc7xngWoeYKieIE7FeUjrDpmxQh--H7HhlrFuI_5bbvt_Gs664XgNx_F360hQFvGZ7rqTIk3K6TOOXE2NanMXIuKYRlLnqZt95UU9Nu1P3U3M4yVT1XAT6zSPW_OsBrEGjcpPkrgiT4R7ssL6iuMgjn";
+                      : "https://lh3.googleusercontent.com/aida-public/AB6AXuDVN88hsrko5PvEE4w8b3M1AxIKO3VlvQWFX1nyfuP1H_Qjc5c9zzzpvN_loMQNc8fFARqjTexzGipodcsCLBG1O1aYLAzSvEc7xngWoeYKieIE7FeUjrDpmxQh--H7HhlrFuI_5bbvt_Gs664XgNx_F360hQFvGZ7rqTIk3K6TOOXE2NanMXIuKYRlLnqZt95UU9Nu1P3U3M4yVT1XAT6zSPW_OsBrEGjcpPkrgiT4R7ssL6iuMgjn"
+                  );
 
                   return (
                     <div
