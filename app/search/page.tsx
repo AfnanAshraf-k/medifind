@@ -682,7 +682,7 @@ function SearchResultsContent() {
           <div className="flex flex-col md:items-start items-center mb-md md:mb-0">
             <span className="text-label-md font-label-md font-bold text-on-surface">MediFind</span>
             <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">
-              © 2026 onwards MediFind Clinical Solutions. All rights reserved.
+              © 2026 MediFind Clinical Solutions. All rights reserved.
             </p>
           </div>
           <div className="flex gap-lg flex-wrap justify-center">

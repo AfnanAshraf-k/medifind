@@ -359,7 +359,7 @@ export default function HomePage() {
         <div className="max-w-max-width mx-auto px-margin-desktop py-lg flex flex-col md:flex-row justify-between items-center gap-md">
           <div className="flex flex-col md:flex-row items-center gap-lg">
             <div className="text-label-md font-label-md font-bold text-on-surface">MediFind</div>
-            <div className="text-body-sm font-body-sm text-on-surface-variant">© 2026 onwards MediFind Clinical Solutions. All rights reserved.</div>
+            <div className="text-body-sm font-body-sm text-on-surface-variant">© 2026 MediFind Clinical Solutions. All rights reserved.</div>
           </div>
           <div className="flex gap-lg">
             <a className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="#">

@@ -74,7 +74,7 @@ export default function SupportMaintenancePage() {
       {/* Footer */}
       <footer className="bg-surface-container-highest border-t border-outline-variant">
         <div className="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-lg text-center text-body-sm text-on-surface-variant">
-          © 2026 onwards MediFind Healthcare Systems. All rights reserved.
+          © 2026 MediFind Healthcare Systems. All rights reserved.
         </div>
       </footer>
     </div>
