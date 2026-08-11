@@ -276,7 +276,7 @@ export default function HomePage() {
               </ul>
               <Link href="/login">
                 <button className="bg-surface text-primary border-2 border-primary px-xl py-md rounded-lg font-label-md hover:bg-primary hover:text-on-primary transition-all">
-                  Create Patient Account
+                  Create User Account
                 </button>
               </Link>
             </div>

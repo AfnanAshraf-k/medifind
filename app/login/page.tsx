@@ -198,7 +198,7 @@ export default function LoginPage() {
               {isSignUp && (
                 <div className="space-y-xs pt-1">
                   <p className="text-xs text-on-surface-variant bg-surface-container-low p-3 rounded-lg border border-outline-variant/50 leading-relaxed">
-                    ℹ️ <strong>Pharmacy Owners:</strong> Store registration requires administrator verification. Please sign up as a patient below, or contact support to request an owner account.
+                    ℹ️ <strong>Pharmacy Owners:</strong> Store registration requires administrator verification. Please sign up as a user below, or contact support to request an owner account.
                   </p>
                 </div>
               )}

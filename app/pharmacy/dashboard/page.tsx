@@ -481,7 +481,7 @@ export default function PharmacyInventoryDashboard() {
               }`}
             >
               <span className="material-symbols-outlined">receipt_long</span>
-              <span className="text-label-md font-label-md">Patient Reservations</span>
+              <span className="text-label-md font-label-md">User Reservations</span>
             </button>
 
             <button
@@ -818,7 +818,7 @@ export default function PharmacyInventoryDashboard() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-surface-container-highest border-b border-outline-variant">
-                          <th className="px-xl py-md text-label-md font-label-md text-on-surface-variant">Patient Name</th>
+                          <th className="px-xl py-md text-label-md font-label-md text-on-surface-variant">User Name</th>
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Medicine Name</th>
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Quantity</th>
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Total Price</th>
@@ -867,7 +867,7 @@ export default function PharmacyInventoryDashboard() {
                             return (
                               <tr key={order.id} className="zebra-row hover:bg-primary-fixed/30 transition-colors">
                                 <td className="px-xl py-md font-semibold">
-                                  {patient?.full_name || patient?.email || "Unknown Patient"}
+                                  {patient?.full_name || patient?.email || "Unknown User"}
                                 </td>
                                 <td className="px-md py-md font-bold text-primary">{medicine.name}</td>
                                 <td className="px-md py-md font-bold">{order.quantity} units</td>

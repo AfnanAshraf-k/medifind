@@ -104,7 +104,7 @@ export default function PatientDashboardPage() {
 </div>
 <div>
 <p className="font-label-md text-label-md text-on-surface">{profile ? profile.full_name : "Loading..."}</p>
-<p className="text-xs text-on-surface-variant">Verified Patient</p>
+<p className="text-xs text-on-surface-variant">Verified User</p>
 </div>
 </div>
 <nav className="flex-grow flex flex-col gap-1">
@@ -150,7 +150,7 @@ export default function PatientDashboardPage() {
 
 <header className="mb-xl flex flex-col md:flex-row md:items-end justify-between gap-md">
 <div>
-<h2 className="font-display text-display text-on-surface">Welcome back, {profile ? profile.full_name.split(" ")[0] : "Patient"}</h2>
+<h2 className="font-display text-display text-on-surface">Welcome back, {profile ? profile.full_name.split(" ")[0] : "User"}</h2>
 <p className="font-body-md text-on-surface-variant mt-1">Here is a summary of your current health and prescription status.</p>
 </div>
 <div className="flex gap-md">
@@ -389,7 +389,7 @@ export default function PatientDashboardPage() {
 <div className="space-y-4">
 <h3 className="font-headline-lg text-headline-lg text-primary">MediFind</h3>
 <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm">
-                    Connecting patients with the medicine they need through innovative pharmacy networks and patient-first technology.
+                    Connecting users with the medicine they need through innovative pharmacy networks and user-first technology.
                 </p>
 </div>
 <div className="flex flex-col md:items-end justify-between gap-4">
