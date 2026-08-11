@@ -74,8 +74,8 @@ function SearchResultsContent() {
   // Data states
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState({ lat: 51.5074, lng: -0.1278 }); // Default London
-  const [locationLabel, setLocationLabel] = useState("London Center (Default)");
+  const [userLocation, setUserLocation] = useState({ lat: 10.8878, lng: 76.0732 }); // Default Valanchery
+  const [locationLabel, setLocationLabel] = useState("Valanchery Town Center (Default)");
   const [mockLocationType, setMockLocationType] = useState("current");
 
   // Load initial coordinates from parameters or browser geolocation
@@ -98,7 +98,7 @@ function SearchResultsContent() {
         },
         () => {
           console.log("Using default location coordinates.");
-          setLocationLabel("London Center (Default)");
+          setLocationLabel("Valanchery Town Center (Default)");
         }
       );
     }
@@ -140,8 +140,8 @@ function SearchResultsContent() {
             const dist = getDistance(
               userLocation.lat,
               userLocation.lng,
-              item.pharmacy.lat || 51.5074,
-              item.pharmacy.lng || -0.1278
+              item.pharmacy.lat || 10.8878,
+              item.pharmacy.lng || 76.0732
             );
             return {
               ...item,
@@ -191,15 +191,12 @@ function SearchResultsContent() {
 
   const handleMockLocationChange = (type: string) => {
     setMockLocationType(type);
-    if (type === "london") {
-      setUserLocation({ lat: 51.5074, lng: -0.1278 });
-      setLocationLabel("London Center Mock");
-    } else if (type === "birmingham") {
-      setUserLocation({ lat: 52.4862, lng: -1.8904 });
-      setLocationLabel("Birmingham Mock");
-    } else if (type === "manchester") {
-      setUserLocation({ lat: 53.4808, lng: -2.2426 });
-      setLocationLabel("Manchester Mock");
+    if (type === "valanchery") {
+      setUserLocation({ lat: 10.8878, lng: 76.0732 });
+      setLocationLabel("Valanchery Center Mock");
+    } else if (type === "perinthalmanna") {
+      setUserLocation({ lat: 10.9765, lng: 76.2269 });
+      setLocationLabel("Perinthalmanna Mock");
     } else if (type === "current") {
       if (navigator.geolocation) {
         setLocationLabel("Locating browser GPS...");
@@ -212,8 +209,8 @@ function SearchResultsContent() {
             setLocationLabel("Your Current GPS Location");
           },
           () => {
-            setUserLocation({ lat: 51.5074, lng: -0.1278 });
-            setLocationLabel("London Center (Fallback)");
+            setUserLocation({ lat: 10.8878, lng: 76.0732 });
+            setLocationLabel("Valanchery Center (Fallback)");
           }
         );
       }
@@ -374,9 +371,8 @@ function SearchResultsContent() {
                   onChange={(e) => handleMockLocationChange(e.target.value)}
                 >
                   <option value="current">📍 Browser Geolocation</option>
-                  <option value="london">🇬🇧 London Center (51.5074, -0.1278)</option>
-                  <option value="birmingham">🇬🇧 Birmingham (52.4862, -1.8904)</option>
-                  <option value="manchester">🇬🇧 Manchester (53.4808, -2.2426)</option>
+                  <option value="valanchery">🇮🇳 Valanchery (10.8878, 76.0732)</option>
+                  <option value="perinthalmanna">🇮🇳 Perinthalmanna (10.9765, 76.2269)</option>
                 </select>
                 <div className="text-[10px] text-on-surface-variant font-mono bg-surface-container-low p-2 rounded border border-outline-variant/30 leading-relaxed">
                   <p className="truncate"><span className="font-bold">Label:</span> {locationLabel}</p>
@@ -642,8 +638,8 @@ function SearchResultsContent() {
 
               {results.map((item, idx) => {
                 // Lat/lng offset mapping from userLocation center
-                const latDiff = (item.pharmacy.lat || 51.5074) - userLocation.lat;
-                const lngDiff = (item.pharmacy.lng || -0.1278) - userLocation.lng;
+                 const latDiff = (item.pharmacy.lat || 10.8878) - userLocation.lat;
+                 const lngDiff = (item.pharmacy.lng || 76.0732) - userLocation.lng;
 
                 // Scale offset percentages relative to map center
                 const topVal = Math.max(10, Math.min(90, 50 - latDiff * 450));

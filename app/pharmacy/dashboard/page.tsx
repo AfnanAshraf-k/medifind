@@ -33,8 +33,8 @@ export default function PharmacyInventoryDashboard() {
   const [newPharmName, setNewPharmName] = useState("");
   const [newPharmAddress, setNewPharmAddress] = useState("");
   const [newPharmPhone, setNewPharmPhone] = useState("");
-  const [newPharmLat, setNewPharmLat] = useState("51.5074");
-  const [newPharmLng, setNewPharmLng] = useState("-0.1278");
+  const [newPharmLat, setNewPharmLat] = useState("10.8878");
+  const [newPharmLng, setNewPharmLng] = useState("76.0732");
   const [actionLoading, setActionLoading] = useState(false);
 
   // Inventory lists
@@ -239,8 +239,8 @@ export default function PharmacyInventoryDashboard() {
           name: newPharmName,
           address: newPharmAddress,
           phone: newPharmPhone,
-          lat: parseFloat(newPharmLat) || 51.5074,
-          lng: parseFloat(newPharmLng) || -0.1278,
+          lat: parseFloat(newPharmLat) || 10.8878,
+          lng: parseFloat(newPharmLng) || 76.0732,
           hours: {
             monday_friday: "08:00 AM - 10:00 PM",
             saturday: "09:00 AM - 08:00 PM",
@@ -418,7 +418,7 @@ export default function PharmacyInventoryDashboard() {
                   className="w-full border border-outline-variant rounded-lg p-2.5 bg-surface-container-lowest"
                   value={newPharmLat}
                   onChange={(e) => setNewPharmLat(e.target.value)}
-                  placeholder="51.5074"
+                  placeholder="10.8878"
                 />
               </div>
               <div>
@@ -429,7 +429,7 @@ export default function PharmacyInventoryDashboard() {
                   className="w-full border border-outline-variant rounded-lg p-2.5 bg-surface-container-lowest"
                   value={newPharmLng}
                   onChange={(e) => setNewPharmLng(e.target.value)}
-                  placeholder="-0.1278"
+                  placeholder="76.0732"
                 />
               </div>
             </div>
