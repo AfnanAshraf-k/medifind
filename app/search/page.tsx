@@ -331,7 +331,11 @@ function SearchResultsContent() {
               />
             </form>
             <div className="flex items-center gap-2">
-              <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
+              <button
+                onClick={() => handleMockLocationChange("current")}
+                title="Detect current location"
+                className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all"
+              >
                 location_on
               </button>
               <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">

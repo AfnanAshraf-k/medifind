@@ -116,9 +116,13 @@ export default function HomePage() {
               <span className="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-surface-variant rounded-full transition-all">
                 notifications
               </span>
-              <span className="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-surface-variant rounded-full transition-all">
+              <button
+                onClick={handleGetLocation}
+                title="Detect current location"
+                className="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-surface-variant rounded-full transition-all border-none bg-transparent"
+              >
                 location_on
-              </span>
+              </button>
             </div>
             <Link href="/login" className="bg-primary text-on-primary px-md py-sm rounded-lg font-label-md hover:opacity-90 active:scale-95 transition-all">
               Login / Sign Up
