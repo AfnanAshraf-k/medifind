@@ -400,7 +400,7 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
           <div className="mb-md md:mb-0">
             <span className="text-label-md font-label-md font-bold text-on-surface">MediFind Clinical Solutions</span>
             <p className="text-body-sm text-on-surface-variant mt-xs">
-              © 2024 MediFind Clinical Solutions. All rights reserved.
+              © 2026 onwards MediFind Clinical Solutions. All rights reserved.
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-lg">

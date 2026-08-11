@@ -400,7 +400,7 @@ export default function PatientDashboardPage() {
 <Link className="text-on-surface-variant dark:text-surface-variant font-body-sm text-body-sm hover:underline decoration-primary transition-all" href="/support">Support</Link>
 </nav>
 <p className="font-body-sm text-body-sm text-on-surface-variant dark:text-surface-variant">
-                    © 2024 MediFind Healthcare Systems. All rights reserved.
+                    © 2026 onwards MediFind Healthcare Systems. All rights reserved.
                 </p>
 </div>
 </div>

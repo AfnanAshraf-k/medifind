@@ -297,7 +297,7 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="mt-xl pt-lg border-t border-outline-variant/30 flex justify-center md:justify-start">
-            <p className="font-body-sm text-on-surface-variant">© 2024 MediFind Healthcare Systems. All rights reserved.</p>
+            <p className="font-body-sm text-on-surface-variant">© 2026 onwards MediFind Healthcare Systems. All rights reserved.</p>
           </div>
         </div>
       </footer>
