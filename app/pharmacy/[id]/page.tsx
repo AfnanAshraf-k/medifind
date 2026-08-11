@@ -1,6 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 interface PharmacyDetailPageProps {
   params: {
@@ -8,38 +11,142 @@ interface PharmacyDetailPageProps {
   };
 }
 
-export default async function PharmacyDetailPage({ params }: PharmacyDetailPageProps) {
+export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) {
+  const router = useRouter();
   const supabase = createClient();
 
-  // Fetch pharmacy
-  const { data: pharmacy, error: pharmErr } = await supabase
-    .from("pharmacies")
-    .select("*")
-    .eq("id", params.id)
-    .single();
+  const [pharmacy, setPharmacy] = useState<any>(null);
+  const [stock, setStock] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  if (pharmErr || !pharmacy) {
-    notFound();
+  // Auth/Reservation states
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [selectedItemToReserve, setSelectedItemToReserve] = useState<any>(null);
+  const [reserveQuantity, setReserveQuantity] = useState(1);
+  const [reservingStatus, setReservingStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [reservingError, setReservingError] = useState("");
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUser(user);
+
+        // Fetch pharmacy details
+        const { data: pharm, error: pharmErr } = await supabase
+          .from("pharmacies")
+          .select("*")
+          .eq("id", params.id)
+          .single();
+
+        if (pharmErr || !pharm) {
+          console.error(pharmErr);
+          setPharmacy(null);
+          setLoading(false);
+          return;
+        }
+        setPharmacy(pharm);
+
+        // Fetch inventory stock
+        const { data: stockList, error: stockErr } = await supabase
+          .from("pharmacy_stock")
+          .select(`
+            id,
+            quantity,
+            price,
+            status,
+            medicine:medicines(*)
+          `)
+          .eq("pharmacy_id", params.id);
+
+        if (!stockErr && stockList) {
+          setStock(stockList);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [params.id, supabase]);
+
+  const handleConfirmReservation = async () => {
+    if (!currentUser) {
+      router.push(`/login?redirect=/pharmacy/${params.id}`);
+      return;
+    }
+
+    setReservingStatus("loading");
+    setReservingError("");
+
+    try {
+      const { data, error } = await supabase
+        .from("reservations")
+        .insert({
+          user_id: currentUser.id,
+          pharmacy_stock_id: selectedItemToReserve.id,
+          quantity: reserveQuantity,
+          status: "pending",
+        })
+        .select();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setReservingStatus("success");
+      setTimeout(() => {
+        setSelectedItemToReserve(null);
+        setReservingStatus("idle");
+        router.push("/dashboard");
+      }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      setReservingStatus("error");
+      setReservingError(err.message || "Failed to make reservation.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background text-on-surface flex items-center justify-center">
+        <div className="text-center py-20 text-on-surface-variant">Loading pharmacy profile...</div>
+      </div>
+    );
   }
 
-  // Fetch pharmacy stock with medicines details
-  const { data: stockList, error: stockErr } = await supabase
-    .from("pharmacy_stock")
-    .select(`
-      id,
-      quantity,
-      price,
-      status,
-      medicine:medicines(*)
-    `)
-    .eq("pharmacy_id", params.id);
-
-  const stock = stockList || [];
+  if (!pharmacy) {
+    return (
+      <div className="min-h-screen bg-background text-on-surface flex flex-col items-center justify-center p-6 text-center">
+        <span className="material-symbols-outlined text-outline text-6xl mb-md">local_pharmacy</span>
+        <h2 className="text-headline-lg font-bold text-on-surface">Pharmacy Profile Not Found</h2>
+        <p className="text-body-md text-on-surface-variant mt-sm max-w-sm">
+          The pharmacy directory listing you are looking for may have been removed or deactivated.
+        </p>
+        <Link href="/search" className="mt-xl bg-primary text-on-primary px-8 py-3 rounded-lg font-label-md">
+          Return to search
+        </Link>
+      </div>
+    );
+  }
 
   const hours = (pharmacy.hours as any) || {};
   const monFriHours = hours.monday_friday || "08:00 AM - 10:00 PM";
   const satHours = hours.saturday || "09:00 AM - 08:00 PM";
   const sunHours = hours.sunday || "Closed";
+
+  // Filter stock live
+  const filteredStock = stock.filter((item) => {
+    const medicine = Array.isArray(item.medicine) ? item.medicine[0] : item.medicine;
+    if (!medicine) return false;
+    return (
+      medicine.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (medicine.generic_name && medicine.generic_name.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  });
 
   return (
     <div className="bg-background text-on-background min-h-screen">
@@ -59,44 +166,30 @@ export default async function PharmacyDetailPage({ params }: PharmacyDetailPageP
               Support
             </a>
           </div>
-          <div className="flex items-center gap-md">
-            <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">
-              notifications
-            </span>
-            <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">
-              location_on
-            </span>
-            <Link href="/login" className="bg-primary text-on-primary px-md py-sm rounded-lg font-label-md hover:bg-surface-tint transition-all active:opacity-80">
-              Pharmacy Login
-            </Link>
-          </div>
         </div>
       </nav>
 
-      <main className="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-xl">
-        <header className="mb-xl">
-          <div className="flex flex-col md:flex-row gap-lg items-start md:items-center justify-between">
-            <div>
-              <h1 className="text-display font-display text-on-surface mb-xs">{pharmacy.name}</h1>
-              <div className="flex flex-wrap items-center gap-md text-on-surface-variant">
-                <div className="flex items-center gap-xs">
-                  <span
-                    className="material-symbols-outlined text-[#F59E0B]"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    star
-                  </span>
-                  <span className="font-label-md text-on-surface">{pharmacy.rating || "0.0"}</span>
-                  <span className="text-body-sm">({pharmacy.review_count || 0} Reviews)</span>
-                </div>
-                <span className="hidden md:block">•</span>
-                <div className="flex items-center gap-xs">
-                  <span className="material-symbols-outlined">location_on</span>
-                  <span className="text-body-md">{pharmacy.address}</span>
-                </div>
-              </div>
+      <main className="max-w-max-width mx-auto px-gutter py-xl">
+        <header className="mb-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-md">
+          <div className="flex gap-lg items-center">
+            <div className="w-20 h-20 bg-primary-container text-on-primary-container rounded-2xl flex items-center justify-center font-display text-display-md flex-shrink-0">
+              {pharmacy.name[0].toUpperCase()}
             </div>
-            <div className="flex gap-md w-full md:w-auto">
+            <div>
+              <h1 className="text-display font-display text-on-surface">{pharmacy.name}</h1>
+              <p className="text-body-md text-on-surface-variant mt-xs">{pharmacy.address}</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-sm w-full md:w-auto">
+            <div className="flex items-center gap-2 self-start md:self-end">
+              <span className="text-label-sm text-on-surface-variant flex items-center gap-1 font-bold">
+                <span className="material-symbols-outlined text-[#F59E0B]" style={{ fontSize: "18px", fontVariationSettings: "'FILL' 1" }}>
+                  star
+                </span>{" "}
+                {pharmacy.rating || "0.0"} ({pharmacy.review_count || 0} reviews)
+              </span>
+            </div>
+            <div className="flex gap-md w-full">
               <a
                 href={`tel:${pharmacy.phone || ""}`}
                 className="flex-1 md:flex-none text-center border border-primary text-primary px-lg py-md rounded-lg font-label-md hover:bg-primary-container hover:text-on-primary-container transition-all"
@@ -117,7 +210,7 @@ export default async function PharmacyDetailPage({ params }: PharmacyDetailPageP
 
         <div className="bento-grid">
           <aside className="col-span-12 lg:col-span-4 space-y-lg">
-            <div className="bg-surface-container-low p-lg rounded-xl border border-outline-variant">
+            <div className="bg-surface-container-low p-lg rounded-xl border border-outline-variant text-on-surface">
               <div className="flex items-center justify-between mb-md">
                 <span className="text-label-md text-on-surface-variant uppercase tracking-wider">Current Status</span>
                 {pharmacy.is_open ? (
@@ -156,7 +249,7 @@ export default async function PharmacyDetailPage({ params }: PharmacyDetailPageP
                   <span className="material-symbols-outlined text-primary">local_shipping</span>
                   <div>
                     <p className="text-label-md text-on-surface">Home Delivery</p>
-                    <p className="text-body-sm text-on-surface-variant">Within 5 miles, $5.00 flat fee</p>
+                    <p className="text-body-sm text-on-surface-variant">Within 5 miles, £5.00 flat fee</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-md">
@@ -200,6 +293,8 @@ export default async function PharmacyDetailPage({ params }: PharmacyDetailPageP
                   className="w-full bg-surface-container-low border border-outline-variant rounded-full py-sm pl-xl pr-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-on-surface"
                   placeholder="Search medicines..."
                   type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">
                   search
@@ -208,12 +303,12 @@ export default async function PharmacyDetailPage({ params }: PharmacyDetailPageP
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-              {stock.length === 0 ? (
+              {filteredStock.length === 0 ? (
                 <div className="col-span-2 text-center py-10 bg-white border border-outline-variant rounded-xl text-on-surface-variant">
-                  No medicine stock registered yet for this pharmacy.
+                  {stock.length === 0 ? "No medicine stock registered yet." : "No medicines match your search."}
                 </div>
               ) : (
-                stock.map((item, idx) => {
+                filteredStock.map((item, idx) => {
                   const medicine: any = Array.isArray(item.medicine) ? item.medicine[0] : item.medicine;
                   if (!medicine) return null;
                   const imageSrc =
@@ -224,7 +319,7 @@ export default async function PharmacyDetailPage({ params }: PharmacyDetailPageP
                   return (
                     <div
                       key={item.id}
-                      className="bg-white p-md rounded-xl border border-outline-variant flex gap-md hover:border-primary transition-all group"
+                      className="bg-white p-md rounded-xl border border-outline-variant flex gap-md hover:border-primary transition-all group text-on-surface"
                     >
                       <div className="w-24 h-24 bg-surface-container-high rounded-lg overflow-hidden flex-shrink-0">
                         <img className="w-full h-full object-cover" alt={medicine.name} src={imageSrc} />
@@ -256,7 +351,22 @@ export default async function PharmacyDetailPage({ params }: PharmacyDetailPageP
                         </div>
                       </div>
                       <div className="flex flex-col justify-center">
-                        <button className="bg-surface-container-highest p-sm rounded-full text-primary hover:bg-primary hover:text-on-primary transition-all">
+                        <button
+                          onClick={() => {
+                            if (!currentUser) {
+                              router.push(`/login?redirect=/pharmacy/${params.id}`);
+                            } else {
+                              setSelectedItemToReserve({
+                                ...item,
+                                pharmacy: pharmacy,
+                              });
+                              setReserveQuantity(1);
+                              setReservingStatus("idle");
+                            }
+                          }}
+                          disabled={item.status === "out_of_stock"}
+                          className="bg-surface-container-highest p-sm rounded-full text-primary hover:bg-primary hover:text-on-primary transition-all disabled:opacity-50"
+                        >
                           <span className="material-symbols-outlined">add</span>
                         </button>
                       </div>
@@ -272,7 +382,10 @@ export default async function PharmacyDetailPage({ params }: PharmacyDetailPageP
                 <p className="text-body-md mb-md max-w-md opacity-90">
                   Upload your prescription photo and have it ready for pickup in under 30 minutes.
                 </p>
-                <button className="bg-on-primary-container text-primary font-label-md px-xl py-md rounded-lg shadow-md hover:bg-white transition-all">
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="bg-on-primary-container text-primary font-label-md px-xl py-md rounded-lg shadow-md hover:bg-white transition-all active:scale-95"
+                >
                   Upload Prescription
                 </button>
               </div>
@@ -304,9 +417,79 @@ export default async function PharmacyDetailPage({ params }: PharmacyDetailPageP
         </div>
       </footer>
 
-      <button className="md:hidden fixed bottom-md right-md bg-primary text-on-primary p-md rounded-full shadow-2xl active:scale-90 transition-transform">
-        <span className="material-symbols-outlined text-[32px]">shopping_cart</span>
-      </button>
+      {/* Reservation Confirmation Modal */}
+      {selectedItemToReserve && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-lg border border-outline-variant shadow-2xl animate-in fade-in zoom-in-95 duration-150 text-on-surface">
+            <h3 className="text-headline-md font-bold mb-sm">Confirm Reservation</h3>
+            <p className="text-body-md text-on-surface-variant mb-md">
+              You are reserving <span className="font-semibold text-on-surface">{selectedItemToReserve.medicine.name}</span> from <span className="font-semibold text-on-surface">{selectedItemToReserve.pharmacy.name}</span>.
+            </p>
+
+            <div className="bg-surface-container-low p-md rounded-xl border border-outline-variant/50 mb-md space-y-sm">
+              <div className="flex justify-between text-body-sm">
+                <span className="text-on-surface-variant">Price per unit:</span>
+                <span className="font-semibold text-on-surface">£{selectedItemToReserve.price.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-body-sm">
+                <span className="text-on-surface-variant">Quantity:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={reserveQuantity <= 1}
+                    onClick={() => setReserveQuantity(q => q - 1)}
+                    className="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center hover:bg-surface-container-high disabled:opacity-50 font-bold"
+                  >
+                    -
+                  </button>
+                  <span className="font-semibold text-on-surface px-2 w-6 text-center">{reserveQuantity}</span>
+                  <button
+                    disabled={reserveQuantity >= selectedItemToReserve.quantity}
+                    onClick={() => setReserveQuantity(q => q + 1)}
+                    className="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center hover:bg-surface-container-high disabled:opacity-50 font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <div className="border-t border-outline-variant/30 pt-sm mt-sm flex justify-between text-body-md font-bold">
+                <span className="text-on-surface">Total Estimated:</span>
+                <span className="text-primary">£{(selectedItemToReserve.price * reserveQuantity).toFixed(2)}</span>
+              </div>
+            </div>
+
+            {reservingStatus === "success" && (
+              <div className="mb-md p-md bg-green-50 text-green-700 text-body-sm rounded-xl border border-green-200 flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">check_circle</span>
+                <span>Reservation placed successfully! Redirecting...</span>
+              </div>
+            )}
+
+            {reservingStatus === "error" && (
+              <div className="mb-md p-md bg-red-50 text-red-700 text-body-sm rounded-xl border border-red-200 flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">error</span>
+                <span className="truncate">{reservingError}</span>
+              </div>
+            )}
+
+            <div className="flex gap-md">
+              <button
+                disabled={reservingStatus === "loading" || reservingStatus === "success"}
+                onClick={() => setSelectedItemToReserve(null)}
+                className="flex-1 py-3 border border-outline-variant text-on-surface rounded-xl hover:bg-surface-container transition-all font-label-md active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={reservingStatus === "loading" || reservingStatus === "success"}
+                onClick={handleConfirmReservation}
+                className="flex-1 py-3 bg-primary text-on-primary rounded-xl hover:bg-primary/95 transition-all font-label-md active:scale-95 shadow-md flex items-center justify-center gap-2"
+              >
+                {reservingStatus === "loading" ? "Reserving..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
