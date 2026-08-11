@@ -7,6 +7,29 @@ import Link from "next/link";
 export default function HomePage() {
   const router = useRouter();
 
+  const KNOWN_TOWNS = [
+    { name: "Valanchery", lat: 10.8878, lng: 76.0732 },
+    { name: "Perinthalmanna", lat: 10.9765, lng: 76.2269 },
+    { name: "Kuttippuram", lat: 10.8407, lng: 76.0331 },
+    { name: "Kottakkal", lat: 10.9992, lng: 75.9926 },
+    { name: "Malappuram", lat: 11.0735, lng: 76.0740 },
+    { name: "Tirur", lat: 10.9027, lng: 75.9238 }
+  ];
+
+  function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 3958.8; // Radius of the Earth in miles
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in miles
+  }
+
   const [q, setQ] = useState("");
   const [locating, setLocating] = useState(false);
   const [gpsLocation, setGpsLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -20,11 +43,23 @@ export default function HomePage() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setGpsLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+          setGpsLocation({ lat: userLat, lng: userLng });
+
+          // Find closest town from KNOWN_TOWNS
+          let closestTown = KNOWN_TOWNS[0];
+          let minDistance = Infinity;
+          
+          KNOWN_TOWNS.forEach(town => {
+            const d = getDistance(userLat, userLng, town.lat, town.lng);
+            if (d < minDistance) {
+              minDistance = d;
+              closestTown = town;
+            }
           });
-          setLocationStatus("GPS Location Active");
+
+          setLocationStatus(`Near ${closestTown.name}`);
           setLocating(false);
         },
         (error) => {
@@ -45,6 +80,17 @@ export default function HomePage() {
     let url = `/search?q=${encodeURIComponent(q)}`;
     if (gpsLocation) {
       url += `&lat=${gpsLocation.lat}&lng=${gpsLocation.lng}`;
+      // Find closest town to attach as label
+      let closestTown = KNOWN_TOWNS[0];
+      let minDistance = Infinity;
+      KNOWN_TOWNS.forEach(town => {
+        const d = getDistance(gpsLocation.lat, gpsLocation.lng, town.lat, town.lng);
+        if (d < minDistance) {
+          minDistance = d;
+          closestTown = town;
+        }
+      });
+      url += `&town=${encodeURIComponent("Near " + closestTown.name)}`;
     }
     router.push(url);
   };

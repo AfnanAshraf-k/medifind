@@ -19,6 +19,15 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * c;
 }
 
+const KNOWN_TOWNS = [
+  { name: "Valanchery", lat: 10.8878, lng: 76.0732 },
+  { name: "Perinthalmanna", lat: 10.9765, lng: 76.2269 },
+  { name: "Kuttippuram", lat: 10.8407, lng: 76.0331 },
+  { name: "Kottakkal", lat: 10.9992, lng: 75.9926 },
+  { name: "Malappuram", lat: 11.0735, lng: 76.0740 },
+  { name: "Tirur", lat: 10.9027, lng: 75.9238 }
+];
+
 function formatTime(dateStr: string) {
   const d = new Date(dateStr);
   const diffMs = Date.now() - d.getTime();
@@ -38,6 +47,7 @@ function SearchResultsContent() {
   const searchQuery = searchParams.get("q") || "";
   const paramLat = searchParams.get("lat");
   const paramLng = searchParams.get("lng");
+  const paramTown = searchParams.get("town");
 
   // Auth User state
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -78,23 +88,32 @@ function SearchResultsContent() {
   const [locationLabel, setLocationLabel] = useState("Valanchery Town Center (Default)");
   const [mockLocationType, setMockLocationType] = useState("current");
 
-  // Load initial coordinates from parameters or browser geolocation
   useEffect(() => {
     if (paramLat && paramLng) {
       setUserLocation({
         lat: parseFloat(paramLat),
         lng: parseFloat(paramLng),
       });
-      setLocationLabel("GPS Coordinates (from Landing Page)");
+      setLocationLabel(paramTown || "GPS Coordinates (from Landing Page)");
       setMockLocationType("current");
     } else if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+          
+          let closestTown = KNOWN_TOWNS[0];
+          let minDistance = Infinity;
+          KNOWN_TOWNS.forEach(town => {
+            const d = getDistance(userLat, userLng, town.lat, town.lng);
+            if (d < minDistance) {
+              minDistance = d;
+              closestTown = town;
+            }
           });
-          setLocationLabel("Your Current GPS Location");
+
+          setUserLocation({ lat: userLat, lng: userLng });
+          setLocationLabel(`Near ${closestTown.name} (Detected via GPS)`);
         },
         () => {
           console.log("Using default location coordinates.");
@@ -102,7 +121,7 @@ function SearchResultsContent() {
         }
       );
     }
-  }, [paramLat, paramLng]);
+  }, [paramLat, paramLng, paramTown]);
 
   useEffect(() => {
     async function fetchResults() {
@@ -202,11 +221,21 @@ function SearchResultsContent() {
         setLocationLabel("Locating browser GPS...");
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            setUserLocation({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+
+            let closestTown = KNOWN_TOWNS[0];
+            let minDistance = Infinity;
+            KNOWN_TOWNS.forEach(town => {
+              const d = getDistance(userLat, userLng, town.lat, town.lng);
+              if (d < minDistance) {
+                minDistance = d;
+                closestTown = town;
+              }
             });
-            setLocationLabel("Your Current GPS Location");
+
+            setUserLocation({ lat: userLat, lng: userLng });
+            setLocationLabel(`Near ${closestTown.name} (Detected via GPS)`);
           },
           () => {
             setUserLocation({ lat: 10.8878, lng: 76.0732 });
