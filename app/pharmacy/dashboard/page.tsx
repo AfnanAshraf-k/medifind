@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 function formatTime(dateStr: string) {
@@ -939,9 +940,9 @@ export default function PharmacyInventoryDashboard() {
                   <a className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="#">
                     Terms of Service
                   </a>
-                  <a className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="#">
+                  <Link className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="/support">
                     Contact Pharmacy Support
-                  </a>
+                  </Link>
                 </div>
               </div>
             </footer>

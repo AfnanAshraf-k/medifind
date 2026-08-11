@@ -286,9 +286,9 @@ function SearchResultsContent() {
               <a className="text-on-surface-variant font-label-md hover:text-primary-container transition-colors cursor-pointer" href="#">
                 Pharmacies
               </a>
-              <a className="text-on-surface-variant font-label-md hover:text-primary-container transition-colors cursor-pointer" href="#">
+              <Link className="text-on-surface-variant font-label-md hover:text-primary-container transition-colors cursor-pointer" href="/support">
                 Support
-              </a>
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
@@ -692,9 +692,9 @@ function SearchResultsContent() {
             <a className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors cursor-pointer">
               Terms of Service
             </a>
-            <a className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors cursor-pointer">
+            <Link className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors cursor-pointer" href="/support">
               Contact Pharmacy Support
-            </a>
+            </Link>
           </div>
         </div>
       </footer>

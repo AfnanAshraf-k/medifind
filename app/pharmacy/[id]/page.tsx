@@ -162,9 +162,9 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
             <a className="text-primary font-label-md border-b-2 border-primary pb-1 transition-colors cursor-pointer">
               Pharmacies
             </a>
-            <a className="text-on-surface-variant font-label-md hover:text-primary transition-colors cursor-pointer">
+            <Link className="text-on-surface-variant font-label-md hover:text-primary transition-colors cursor-pointer" href="/support">
               Support
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
@@ -410,9 +410,9 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
             <a className="text-on-surface-variant font-label-sm hover:text-on-surface transition-colors cursor-pointer">
               Terms of Service
             </a>
-            <a className="text-on-surface-variant font-label-sm hover:text-on-surface transition-colors cursor-pointer">
+            <Link className="text-on-surface-variant font-label-sm hover:text-on-surface transition-colors cursor-pointer" href="/support">
               Contact Pharmacy Support
-            </a>
+            </Link>
           </div>
         </div>
       </footer>

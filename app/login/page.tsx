@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -290,9 +291,9 @@ export default function LoginPage() {
               <a className="text-on-surface-variant font-body-sm hover:underline hover:text-primary transition-all" href="#">
                 Pharmacy Portal
               </a>
-              <a className="text-on-surface-variant font-body-sm hover:underline hover:text-primary transition-all" href="#">
+              <Link className="text-on-surface-variant font-body-sm hover:underline hover:text-primary transition-all" href="/support">
                 Support
-              </a>
+              </Link>
             </div>
           </div>
           <div className="mt-xl pt-lg border-t border-outline-variant/30 flex justify-center md:justify-start">

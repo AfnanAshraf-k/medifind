@@ -397,7 +397,7 @@ export default function PatientDashboardPage() {
 <a className="text-on-surface-variant dark:text-surface-variant font-body-sm text-body-sm hover:underline decoration-primary transition-all" href="#">Privacy Policy</a>
 <a className="text-on-surface-variant dark:text-surface-variant font-body-sm text-body-sm hover:underline decoration-primary transition-all" href="#">Terms of Service</a>
 <a className="text-on-surface-variant dark:text-surface-variant font-body-sm text-body-sm hover:underline decoration-primary transition-all" href="#">Pharmacy Portal</a>
-<a className="text-on-surface-variant dark:text-surface-variant font-body-sm text-body-sm hover:underline decoration-primary transition-all" href="#">Support</a>
+<Link className="text-on-surface-variant dark:text-surface-variant font-body-sm text-body-sm hover:underline decoration-primary transition-all" href="/support">Support</Link>
 </nav>
 <p className="font-body-sm text-body-sm text-on-surface-variant dark:text-surface-variant">
                     © 2024 MediFind Healthcare Systems. All rights reserved.

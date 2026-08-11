@@ -61,9 +61,9 @@ export default function HomePage() {
             <a className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="#">
               Pharmacies
             </a>
-            <a className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="#">
+            <Link className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="/support">
               Support
-            </a>
+            </Link>
           </nav>
           <div className="flex items-center gap-md">
             <div className="flex items-center gap-sm">
@@ -368,9 +368,9 @@ export default function HomePage() {
             <a className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="#">
               Terms of Service
             </a>
-            <a className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="#">
+            <Link className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="/support">
               Contact Pharmacy Support
-            </a>
+            </Link>
           </div>
         </div>
       </footer>
