@@ -104,9 +104,9 @@ export default function HomePage() {
             <Link className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="/search">
               Find Medicine
             </Link>
-            <a className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="#">
+            <Link className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="/search?mode=pharmacy">
               Pharmacies
-            </a>
+            </Link>
             <Link className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="/support">
               Support
             </Link>

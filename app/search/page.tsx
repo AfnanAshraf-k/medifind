@@ -48,6 +48,7 @@ function SearchResultsContent() {
   const paramLat = searchParams.get("lat");
   const paramLng = searchParams.get("lng");
   const paramTown = searchParams.get("town");
+  const mode = searchParams.get("mode") || "medicine";
 
   // Auth User state
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -127,31 +128,56 @@ function SearchResultsContent() {
     async function fetchResults() {
       setLoading(true);
       try {
-        let query = supabase
-          .from("pharmacy_stock")
-          .select(`
-            id,
-            quantity,
-            price,
-            status,
-            updated_at,
-            pharmacy:pharmacies!inner(*),
-            medicine:medicines!inner(*)
-          `);
+        let data: any[] = [];
+        let queryError: any = null;
 
-        if (searchQuery) {
-          query = query.textSearch("medicine.name", searchQuery);
+        if (mode === "pharmacy") {
+          let query = supabase.from("pharmacies").select("*");
+          if (searchQuery) {
+            query = query.ilike("name", `%${searchQuery}%`);
+          }
+          const { data: rawData, error } = await query;
+          queryError = error;
+          if (!error) {
+            data = (rawData || []).map((pharmacy: any) => ({
+              id: pharmacy.id,
+              pharmacy: pharmacy,
+              price: 0,
+              status: "in_stock",
+              updated_at: pharmacy.created_at,
+            }));
+          }
+        } else {
+          let query = supabase
+            .from("pharmacy_stock")
+            .select(`
+              id,
+              quantity,
+              price,
+              status,
+              updated_at,
+              pharmacy:pharmacies!inner(*),
+              medicine:medicines!inner(*)
+            `);
+
+          if (searchQuery) {
+            query = query.textSearch("medicine.name", searchQuery);
+          }
+
+          if (inStockOnly) {
+            query = query.neq("status", "out_of_stock");
+          }
+
+          query = query.lte("price", maxPrice);
+
+          const { data: rawData, error } = await query;
+          queryError = error;
+          if (!error) {
+            data = rawData || [];
+          }
         }
-
-        if (inStockOnly) {
-          query = query.neq("status", "out_of_stock");
-        }
-
-        query = query.lte("price", maxPrice);
-
-        const { data, error } = await query;
-        if (error) {
-          console.error(error);
+        if (queryError) {
+          console.error(queryError);
           setResults([]);
         } else {
           // Client side calculations (distance and mock attributes)
@@ -206,7 +232,7 @@ function SearchResultsContent() {
     }
 
     fetchResults();
-  }, [searchQuery, inStockOnly, maxDistance, maxPrice, openNow, twentyFourHours, driveThru, userLocation, supabase]);
+  }, [searchQuery, mode, inStockOnly, maxDistance, maxPrice, openNow, twentyFourHours, driveThru, userLocation, supabase]);
 
   const handleMockLocationChange = (type: string) => {
     setMockLocationType(type);
@@ -248,7 +274,7 @@ function SearchResultsContent() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/search?q=${encodeURIComponent(searchInput)}`);
+    router.push(`/search?q=${encodeURIComponent(searchInput)}&mode=${mode}`);
   };
 
   const handleClearFilters = () => {
@@ -306,12 +332,12 @@ function SearchResultsContent() {
               MediFind
             </Link>
             <nav className="hidden md:flex gap-6">
-              <Link className="text-primary font-label-md border-b-2 border-primary pb-1 transition-all cursor-pointer" href="/search">
+              <Link className={`font-label-md transition-all cursor-pointer ${mode !== "pharmacy" ? "text-primary border-b-2 border-primary pb-1" : "text-on-surface-variant hover:text-primary-container"}`} href="/search">
                 Find Medicine
               </Link>
-              <a className="text-on-surface-variant font-label-md hover:text-primary-container transition-colors cursor-pointer" href="#">
+              <Link className={`font-label-md transition-all cursor-pointer ${mode === "pharmacy" ? "text-primary border-b-2 border-primary pb-1" : "text-on-surface-variant hover:text-primary-container"}`} href="/search?mode=pharmacy">
                 Pharmacies
-              </a>
+              </Link>
               <Link className="text-on-surface-variant font-label-md hover:text-primary-container transition-colors cursor-pointer" href="/support">
                 Support
               </Link>
@@ -327,7 +353,7 @@ function SearchResultsContent() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search medicines..."
+                placeholder={mode === "pharmacy" ? "Search pharmacies..." : "Search medicines..."}
               />
             </form>
             <div className="flex items-center gap-2">
@@ -353,7 +379,7 @@ function SearchResultsContent() {
         <div className="mb-xl flex flex-col md:flex-row md:items-end justify-between gap-md">
           <div>
             <h1 className="text-headline-lg font-headline-lg text-on-background mb-1">
-              {searchQuery || "All Medicines"}
+              {searchQuery || (mode === "pharmacy" ? "All Pharmacies" : "All Medicines")}
             </h1>
             <p className="text-on-surface-variant text-body-md">
               Showing {results.length} {results.length === 1 ? "pharmacy" : "pharmacies"} near{" "}
@@ -414,19 +440,21 @@ function SearchResultsContent() {
                 </div>
               </div>
 
-              <div className="mb-lg">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    checked={inStockOnly}
-                    onChange={(e) => setInStockOnly(e.target.checked)}
-                    className="w-5 h-5 rounded border-outline text-primary focus:ring-primary"
-                    type="checkbox"
-                  />
-                  <span className="text-body-md text-on-surface group-hover:text-primary transition-colors">
-                    In Stock Only
-                  </span>
-                </label>
-              </div>
+              {mode !== "pharmacy" && (
+                <div className="mb-lg">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      checked={inStockOnly}
+                      onChange={(e) => setInStockOnly(e.target.checked)}
+                      className="w-5 h-5 rounded border-outline text-primary focus:ring-primary"
+                      type="checkbox"
+                    />
+                    <span className="text-body-md text-on-surface group-hover:text-primary transition-colors">
+                      In Stock Only
+                    </span>
+                  </label>
+                </div>
+              )}
 
               <div className="space-y-lg">
                 <div>
@@ -444,20 +472,22 @@ function SearchResultsContent() {
                   />
                 </div>
 
-                <div>
-                  <div className="flex justify-between items-center mb-sm">
-                    <span className="font-label-md text-on-surface">Max Price</span>
-                    <span className="text-label-sm text-primary">£{maxPrice.toFixed(2)}</span>
+                {mode !== "pharmacy" && (
+                  <div>
+                    <div className="flex justify-between items-center mb-sm">
+                      <span className="font-label-md text-on-surface">Max Price</span>
+                      <span className="text-label-sm text-primary">£{maxPrice.toFixed(2)}</span>
+                    </div>
+                    <input
+                      className="w-full accent-primary h-1.5 bg-surface-container-highest rounded-full cursor-pointer"
+                      max="150"
+                      min="5"
+                      type="range"
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(parseInt(e.target.value))}
+                    />
                   </div>
-                  <input
-                    className="w-full accent-primary h-1.5 bg-surface-container-highest rounded-full cursor-pointer"
-                    max="150"
-                    min="5"
-                    type="range"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(parseInt(e.target.value))}
-                  />
-                </div>
+                )}
 
                 <div>
                   <span className="font-label-md text-on-surface block mb-sm">Pharmacy Type</span>
@@ -571,78 +601,115 @@ function SearchResultsContent() {
                               {item.distance.toFixed(1)} miles away
                             </span>
                           </div>
-                          <p className="text-xs text-on-surface-variant mt-1">
-                            {medicine.name} ({medicine.category})
-                          </p>
+                          {medicine ? (
+                            <p className="text-xs text-on-surface-variant mt-1">
+                              {medicine.name} ({medicine.category})
+                            </p>
+                          ) : (
+                            <p className="text-xs text-on-surface-variant mt-1 font-mono text-[11px]">
+                              📍 {pharmacy.address} • 📞 {pharmacy.phone || "No phone listed"}
+                            </p>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <span className="text-headline-md text-primary font-bold">£{item.price.toFixed(2)}</span>
-                          <p className="text-label-sm text-on-surface-variant">Estimated Price</p>
-                        </div>
+                        {medicine && (
+                          <div className="text-right">
+                            <span className="text-headline-md text-primary font-bold">£{item.price.toFixed(2)}</span>
+                            <p className="text-label-sm text-on-surface-variant">Estimated Price</p>
+                          </div>
+                        )}
                       </div>
-                      <div className="mt-md flex flex-wrap gap-sm items-center">
-                        <span
-                          className={`px-3 py-1 rounded-full text-label-sm font-bold flex items-center gap-1 ${
-                            item.status === "in_stock"
-                              ? "bg-green-100 text-green-700"
-                              : item.status === "low_stock"
-                              ? "bg-orange-100 text-orange-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              item.status === "in_stock"
-                                ? "bg-green-500"
+
+                      {medicine ? (
+                        <>
+                          <div className="mt-md flex flex-wrap gap-sm items-center">
+                            <span
+                              className={`px-3 py-1 rounded-full text-label-sm font-bold flex items-center gap-1 ${
+                                item.status === "in_stock"
+                                  ? "bg-green-100 text-green-700"
+                                  : item.status === "low_stock"
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              <span
+                                className={`w-2 h-2 rounded-full ${
+                                  item.status === "in_stock"
+                                    ? "bg-green-500"
+                                    : item.status === "low_stock"
+                                    ? "bg-orange-500"
+                                    : "bg-red-500"
+                                }`}
+                              ></span>{" "}
+                              {item.status === "in_stock"
+                                ? "In Stock"
                                 : item.status === "low_stock"
-                                ? "bg-orange-500"
-                                : "bg-red-500"
-                            }`}
-                          ></span>{" "}
-                          {item.status === "in_stock"
-                            ? "In Stock"
-                            : item.status === "low_stock"
-                            ? "Low Stock"
-                            : "Out of Stock"}
-                        </span>
-                        <span className="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm">
-                          Updated {formatTime(item.updated_at)}
-                        </span>
-                        <span className="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm">
-                          {pharmacy.is_open ? "Open Now" : "Closed"}
-                        </span>
-                      </div>
-                      <div className="mt-lg flex gap-md flex-wrap">
-                        <button
-                          onClick={() => {
-                            if (!currentUser) {
-                              router.push(`/login?redirect=/search?q=${encodeURIComponent(searchQuery)}`);
-                            } else {
-                              setSelectedItemToReserve(item);
-                              setReserveQuantity(1);
-                              setReservingStatus("idle");
-                            }
-                          }}
-                          disabled={item.status === "out_of_stock"}
-                          className="flex-grow md:flex-none text-center bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md hover:opacity-90 active:scale-95 transition-all disabled:opacity-55 shadow"
-                        >
-                          {item.status === "out_of_stock" ? "Out of Stock" : "Reserve Medicine"}
-                        </button>
-                        <Link
-                          href={`/pharmacy/${pharmacy.id}`}
-                          className="flex-grow md:flex-none text-center border border-outline-variant text-on-surface px-6 py-2.5 rounded-lg font-label-md hover:bg-surface-variant active:scale-95 transition-all"
-                        >
-                          View Pharmacy Detail
-                        </Link>
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${pharmacy.lat || 0},${pharmacy.lng || 0}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-grow md:flex-none text-center border border-outline-variant text-on-surface px-6 py-2.5 rounded-lg font-label-md hover:bg-surface-variant active:scale-95 transition-all"
-                        >
-                          Get Directions
-                        </a>
-                      </div>
+                                ? "Low Stock"
+                                : "Out of Stock"}
+                            </span>
+                            <span className="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm">
+                              Updated {formatTime(item.updated_at)}
+                            </span>
+                            <span className="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm">
+                              {pharmacy.is_open ? "Open Now" : "Closed"}
+                            </span>
+                          </div>
+                          <div className="mt-lg flex gap-md flex-wrap">
+                            <button
+                              onClick={() => {
+                                if (!currentUser) {
+                                  router.push(`/login?redirect=/search?q=${encodeURIComponent(searchQuery)}`);
+                                } else {
+                                  setSelectedItemToReserve(item);
+                                  setReserveQuantity(1);
+                                  setReservingStatus("idle");
+                                }
+                              }}
+                              disabled={item.status === "out_of_stock"}
+                              className="flex-grow md:flex-none text-center bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md hover:opacity-90 active:scale-95 transition-all disabled:opacity-55 shadow"
+                            >
+                              {item.status === "out_of_stock" ? "Out of Stock" : "Reserve Medicine"}
+                            </button>
+                            <Link
+                              href={`/pharmacy/${pharmacy.id}`}
+                              className="flex-grow md:flex-none text-center border border-outline-variant text-on-surface px-6 py-2.5 rounded-lg font-label-md hover:bg-surface-variant active:scale-95 transition-all"
+                            >
+                              View Pharmacy Detail
+                            </Link>
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${pharmacy.lat || 0},${pharmacy.lng || 0}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-grow md:flex-none text-center border border-outline-variant text-on-surface px-6 py-2.5 rounded-lg font-label-md hover:bg-surface-variant active:scale-95 transition-all"
+                            >
+                              Get Directions
+                            </a>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="mt-md flex flex-wrap gap-sm items-center">
+                            <span className="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm">
+                              {pharmacy.is_open ? "Open Now" : "Closed"}
+                            </span>
+                          </div>
+                          <div className="mt-lg flex gap-md flex-wrap">
+                            <Link
+                              href={`/pharmacy/${pharmacy.id}`}
+                              className="flex-grow md:flex-none text-center bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md hover:opacity-90 active:scale-95 transition-all shadow"
+                            >
+                              View Store Catalog & Reserve
+                            </Link>
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${pharmacy.lat || 0},${pharmacy.lng || 0}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-grow md:flex-none text-center border border-outline-variant text-on-surface px-6 py-2.5 rounded-lg font-label-md hover:bg-surface-variant active:scale-95 transition-all"
+                            >
+                              Get Directions
+                            </a>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -685,7 +752,7 @@ function SearchResultsContent() {
                     className="absolute group flex flex-col items-center"
                   >
                     <div className="bg-white px-2 py-1 rounded shadow-md border border-outline-variant text-[10px] font-bold text-on-surface whitespace-nowrap hidden group-hover:block z-20">
-                      {item.pharmacy.name} - £{item.price.toFixed(2)} ({item.distance.toFixed(1)}m away)
+                      {item.pharmacy.name} {mode !== "pharmacy" ? `- £${item.price.toFixed(2)}` : ""} ({item.distance.toFixed(1)} miles away)
                     </div>
                     <span className="material-symbols-outlined text-primary text-3xl cursor-pointer hover:scale-110 transition-transform" style={{ fontVariationSettings: "'FILL' 1" }}>
                       location_on
