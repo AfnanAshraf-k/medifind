@@ -75,7 +75,7 @@ export default function HomePage() {
               </span>
             </div>
             <Link href="/login" className="bg-primary text-on-primary px-md py-sm rounded-lg font-label-md hover:opacity-90 active:scale-95 transition-all">
-              Pharmacy Login
+              Login / Sign Up
             </Link>
           </div>
         </div>

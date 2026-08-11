@@ -313,7 +313,7 @@ function SearchResultsContent() {
               </button>
             </div>
             <Link href="/login" className="hidden lg:block bg-primary text-on-primary px-4 py-2 rounded-lg font-label-md hover:opacity-90 active:opacity-80 transition-all">
-              Pharmacy Login
+              Login / Sign Up
             </Link>
           </div>
         </div>

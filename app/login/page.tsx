@@ -196,32 +196,10 @@ export default function LoginPage() {
               </div>
 
               {isSignUp && (
-                <div className="space-y-xs">
-                  <label className="block font-label-md text-on-surface">Account Type</label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="role"
-                        value="user"
-                        checked={role === "user"}
-                        onChange={() => setRole("user")}
-                        className="text-primary focus:ring-primary"
-                      />
-                      <span className="text-body-md text-on-surface">Patient</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="role"
-                        value="pharmacy"
-                        checked={role === "pharmacy"}
-                        onChange={() => setRole("pharmacy")}
-                        className="text-primary focus:ring-primary"
-                      />
-                      <span className="text-body-md text-on-surface">Pharmacy Owner</span>
-                    </label>
-                  </div>
+                <div className="space-y-xs pt-1">
+                  <p className="text-xs text-on-surface-variant bg-surface-container-low p-3 rounded-lg border border-outline-variant/50 leading-relaxed">
+                    ℹ️ <strong>Pharmacy Owners:</strong> Store registration requires administrator verification. Please sign up as a patient below, or contact support to request an owner account.
+                  </p>
                 </div>
               )}
 
