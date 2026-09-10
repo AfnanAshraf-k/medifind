@@ -13,6 +13,7 @@ export default function PatientDashboardPage() {
   const [profile, setProfile] = useState<{ full_name: string; email: string } | null>(null);
   const [reservations, setReservations] = useState<any[]>([]);
   const [loadingReservations, setLoadingReservations] = useState(true);
+  const [viewingPrescriptionUrl, setViewingPrescriptionUrl] = useState<string | null>(null);
 
   const loadReservations = async (userId: string) => {
     setLoadingReservations(true);
@@ -24,6 +25,7 @@ export default function PatientDashboardPage() {
           quantity,
           status,
           created_at,
+          prescription_url,
           pharmacy_stock:pharmacy_stock_id(
             price,
             pharmacy:pharmacies(*),
@@ -254,6 +256,15 @@ export default function PatientDashboardPage() {
             <span className="font-semibold text-on-surface text-body-sm">£{(stock.price * res.quantity).toFixed(2)}</span>
             <p className="text-[10px] text-on-surface-variant">Total Price</p>
           </div>
+          {res.prescription_url && (
+            <button
+              onClick={() => setViewingPrescriptionUrl(res.prescription_url)}
+              className="px-2.5 py-1 bg-surface-container hover:bg-surface-container-high text-primary rounded-lg text-xs font-semibold flex items-center gap-1 border border-outline-variant transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">description</span>
+              View Rx
+            </button>
+          )}
           <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusColors[res.status] || statusColors.pending}`}>
             {statusLabels[res.status] || res.status}
           </span>
@@ -406,6 +417,53 @@ export default function PatientDashboardPage() {
 </div>
 </footer>
 
+      {/* Prescription Preview Modal */}
+      {viewingPrescriptionUrl && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-lg border border-outline-variant shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="flex justify-between items-center pb-md border-b border-outline-variant">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-2xl">description</span>
+                <h3 className="text-title-lg font-bold text-on-surface">Attached Prescription</h3>
+              </div>
+              <button
+                onClick={() => setViewingPrescriptionUrl(null)}
+                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto py-md flex items-center justify-center bg-black/5 rounded-xl my-md">
+              {viewingPrescriptionUrl.startsWith("data:application/pdf") || viewingPrescriptionUrl.endsWith(".pdf") ? (
+                <iframe src={viewingPrescriptionUrl} className="w-full h-96 rounded-lg" title="Prescription Document" />
+              ) : (
+                <img
+                  src={viewingPrescriptionUrl}
+                  alt="Uploaded Prescription"
+                  className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm"
+                />
+              )}
+            </div>
+            <div className="flex justify-end gap-3 pt-sm border-t border-outline-variant">
+              <a
+                href={viewingPrescriptionUrl}
+                target="_blank"
+                rel="noreferrer"
+                download="prescription"
+                className="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md rounded-xl border border-outline-variant flex items-center gap-1.5 transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">download</span> Download File
+              </a>
+              <button
+                onClick={() => setViewingPrescriptionUrl(null)}
+                className="px-5 py-2 bg-primary text-on-primary font-label-md rounded-xl hover:bg-primary/95 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

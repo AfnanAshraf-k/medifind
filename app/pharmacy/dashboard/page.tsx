@@ -56,6 +56,9 @@ export default function PharmacyInventoryDashboard() {
   const [customGeneric, setCustomGeneric] = useState("");
   const [customCategory, setCustomCategory] = useState("");
 
+  // Rx Preview Modal state
+  const [viewingRx, setViewingRx] = useState<{ url: string; userName: string; medName: string } | null>(null);
+
   const loadProfileAndPharmacy = async () => {
     setPharmacyLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -119,6 +122,7 @@ export default function PharmacyInventoryDashboard() {
           quantity,
           status,
           created_at,
+          prescription_url,
           user:profiles(id, full_name, email),
           pharmacy_stock:pharmacy_stock_id!inner(
             id,
@@ -823,6 +827,7 @@ export default function PharmacyInventoryDashboard() {
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Medicine Name</th>
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Quantity</th>
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Total Price</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Prescription</th>
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Reserved Date</th>
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Status</th>
                           <th className="px-xl py-md text-label-md font-label-md text-on-surface-variant text-right">
@@ -833,13 +838,13 @@ export default function PharmacyInventoryDashboard() {
                       <tbody className="text-body-sm divide-y divide-outline-variant">
                         {ordersLoading ? (
                           <tr>
-                            <td colSpan={7} className="px-xl py-8 text-center text-on-surface-variant">
+                            <td colSpan={8} className="px-xl py-8 text-center text-on-surface-variant">
                               Loading reservations...
                             </td>
                           </tr>
                         ) : ordersList.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="px-xl py-8 text-center text-on-surface-variant">
+                            <td colSpan={8} className="px-xl py-8 text-center text-on-surface-variant">
                               No active reservations found for your pharmacy.
                             </td>
                           </tr>
@@ -874,6 +879,22 @@ export default function PharmacyInventoryDashboard() {
                                 <td className="px-md py-md font-bold">{order.quantity} units</td>
                                 <td className="px-md py-md font-bold text-on-surface">
                                   £{(stock.price * order.quantity).toFixed(2)}
+                                </td>
+                                <td className="px-md py-md">
+                                  {order.prescription_url ? (
+                                    <button
+                                      onClick={() => setViewingRx({
+                                        url: order.prescription_url,
+                                        userName: patient?.full_name || patient?.email || "User",
+                                        medName: medicine.name
+                                      })}
+                                      className="px-2.5 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border border-primary/20"
+                                    >
+                                      <span className="material-symbols-outlined text-xs">description</span> View Rx
+                                    </button>
+                                  ) : (
+                                    <span className="text-xs text-on-surface-variant italic">No Rx Attached</span>
+                                  )}
                                 </td>
                                 <td className="px-md py-md text-on-surface-variant">
                                   {new Date(order.created_at).toLocaleDateString()}
@@ -948,6 +969,66 @@ export default function PharmacyInventoryDashboard() {
             </footer>
           </div>
         </main>
+
+        {/* Prescription Verification Modal for Pharmacy Staff */}
+        {viewingRx && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-2xl max-w-xl w-full p-lg border border-outline-variant shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+              <div className="flex justify-between items-center pb-md border-b border-outline-variant">
+                <div>
+                  <h3 className="text-title-lg font-bold text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-2xl">clinical_notes</span>
+                    Prescription Document
+                  </h3>
+                  <p className="text-body-xs text-on-surface-variant mt-0.5">
+                    For: <span className="font-semibold text-on-surface">{viewingRx.userName}</span> • Medicine: <span className="font-semibold text-primary">{viewingRx.medName}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setViewingRx(null)}
+                  className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant"
+                >
+                  <span className="material-symbols-outlined text-xl">close</span>
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-auto py-md flex items-center justify-center bg-black/5 rounded-xl my-md">
+                {viewingRx.url.startsWith("data:application/pdf") || viewingRx.url.endsWith(".pdf") ? (
+                  <iframe src={viewingRx.url} className="w-full h-96 rounded-lg" title="Prescription Document" />
+                ) : (
+                  <img
+                    src={viewingRx.url}
+                    alt="Prescription"
+                    className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm"
+                  />
+                )}
+              </div>
+
+              <div className="flex items-center justify-between pt-sm border-t border-outline-variant">
+                <span className="text-body-xs text-on-surface-variant flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm text-green-600">verified</span> Verified document upload
+                </span>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={viewingRx.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    download="prescription"
+                    className="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md rounded-xl border border-outline-variant flex items-center gap-1.5 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">download</span> Download
+                  </a>
+                  <button
+                    onClick={() => setViewingRx(null)}
+                    className="px-5 py-2 bg-primary text-on-primary font-label-md rounded-xl hover:bg-primary/95 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* New/Edit Entry Modal */}

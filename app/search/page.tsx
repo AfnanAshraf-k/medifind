@@ -61,6 +61,8 @@ function SearchResultsContent() {
   const [reserveQuantity, setReserveQuantity] = useState(1);
   const [reservingStatus, setReservingStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [reservingError, setReservingError] = useState("");
+  const [prescriptionFile, setPrescriptionFile] = useState<File | null>(null);
+  const [prescriptionPreview, setPrescriptionPreview] = useState<string | null>(null);
 
   // Get current user session
   useEffect(() => {
@@ -296,12 +298,43 @@ function SearchResultsContent() {
     setReservingError("");
 
     try {
+      let rxUrl: string | null = null;
+      if (prescriptionFile) {
+        try {
+          const fileExt = prescriptionFile.name.split('.').pop() || 'png';
+          const filePath = `${currentUser.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const { data: uploadData, error: uploadError } = await supabase
+            .storage
+            .from("prescriptions")
+            .upload(filePath, prescriptionFile);
+
+          if (!uploadError && uploadData) {
+            const { data: publicUrlData } = supabase
+              .storage
+              .from("prescriptions")
+              .getPublicUrl(filePath);
+            rxUrl = publicUrlData?.publicUrl || null;
+          } else {
+            // Fallback to data URL
+            const reader = new FileReader();
+            rxUrl = await new Promise<string>((resolve) => {
+              reader.onload = (e) => resolve(e.target?.result as string);
+              reader.onerror = () => resolve("");
+              reader.readAsDataURL(prescriptionFile);
+            });
+          }
+        } catch (e) {
+          console.warn("Storage upload fallback used", e);
+        }
+      }
+
       const { data, error } = await supabase
         .from("reservations")
         .insert({
           user_id: currentUser.id,
           pharmacy_stock_id: selectedItemToReserve.id,
           quantity: reserveQuantity,
+          prescription_url: rxUrl,
           status: "pending",
         })
         .select();
@@ -313,6 +346,8 @@ function SearchResultsContent() {
       setReservingStatus("success");
       setTimeout(() => {
         setSelectedItemToReserve(null);
+        setPrescriptionFile(null);
+        setPrescriptionPreview(null);
         setReservingStatus("idle");
         router.push("/dashboard");
       }, 1500);
@@ -834,6 +869,58 @@ function SearchResultsContent() {
                 <span className="text-on-surface">Total Estimated:</span>
                 <span className="text-primary">£{(selectedItemToReserve.price * reserveQuantity).toFixed(2)}</span>
               </div>
+            </div>
+
+            {/* Prescription Upload Section */}
+            <div className="mb-md">
+              <label className="block text-body-sm font-semibold text-on-surface mb-1.5 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-primary text-base">description</span>
+                Attach Prescription (Optional)
+              </label>
+              {prescriptionFile ? (
+                <div className="p-sm bg-surface-container rounded-xl border border-outline-variant text-body-sm space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <span className="material-symbols-outlined text-primary">description</span>
+                      <span className="truncate max-w-[200px] font-medium text-on-surface">{prescriptionFile.name}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setPrescriptionFile(null); setPrescriptionPreview(null); }}
+                      className="text-red-600 hover:text-red-700 text-xs font-bold px-2 py-1 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  {prescriptionPreview && (
+                    <div className="mt-2 relative rounded-lg overflow-hidden border border-outline-variant/50 max-h-32 bg-black/5 flex items-center justify-center">
+                      <img src={prescriptionPreview} alt="Prescription Preview" className="max-h-32 object-contain" />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-outline-variant hover:border-primary rounded-xl cursor-pointer bg-surface-container-lowest transition-all hover:bg-primary-fixed/20 text-center group">
+                  <span className="material-symbols-outlined text-primary text-xl group-hover:scale-110 transition-transform">upload_file</span>
+                  <span className="text-body-xs font-semibold text-on-surface mt-1">Upload Rx (.png, .jpg, .pdf)</span>
+                  <span className="text-[11px] text-on-surface-variant">Required for restricted medicines</span>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setPrescriptionFile(file);
+                        if (file.type.startsWith("image/")) {
+                          setPrescriptionPreview(URL.createObjectURL(file));
+                        } else {
+                          setPrescriptionPreview(null);
+                        }
+                      }
+                    }}
+                  />
+                </label>
+              )}
             </div>
 
             {reservingStatus === "success" && (
