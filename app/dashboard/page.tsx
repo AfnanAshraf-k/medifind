@@ -25,6 +25,7 @@ export default function PatientDashboardPage() {
           quantity,
           status,
           created_at,
+          expires_at,
           prescription_url,
           pharmacy_stock:pharmacy_stock_id(
             price,
@@ -95,6 +96,7 @@ export default function PatientDashboardPage() {
     ready: "bg-green-100 text-green-700 border-green-200",
     collected: "bg-blue-100 text-blue-700 border-blue-200",
     cancelled: "bg-slate-100 text-slate-500 border-slate-200",
+    expired: "bg-red-100 text-red-700 border-red-200",
   };
 
   const statusLabels: Record<string, string> = {
@@ -102,10 +104,11 @@ export default function PatientDashboardPage() {
     ready: "Ready for Pickup",
     collected: "Collected",
     cancelled: "Cancelled",
+    expired: "Expired",
   };
 
   const activeReservations = reservations.filter(r => r.status === "pending" || r.status === "ready");
-  const completedReservations = reservations.filter(r => r.status === "collected" || r.status === "cancelled");
+  const completedReservations = reservations.filter(r => r.status === "collected" || r.status === "cancelled" || r.status === "expired");
 
   return (
     <div className="bg-surface text-on-surface">
@@ -274,6 +277,11 @@ export default function PatientDashboardPage() {
 
                   if (!medicine || !pharmacy) return null;
 
+                  const expiryTime = res.expires_at ? new Date(res.expires_at) : null;
+                  const isExpired = res.status === "expired" || (expiryTime && expiryTime.getTime() < Date.now() && res.status === "pending");
+                  const msLeft = expiryTime ? expiryTime.getTime() - Date.now() : 0;
+                  const hoursLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60)));
+
                   return (
                     <div
                       key={res.id}
@@ -293,6 +301,18 @@ export default function PatientDashboardPage() {
                           <p className="text-[10px] text-outline mt-0.5">
                             Reserved on {new Date(res.created_at).toLocaleDateString()}
                           </p>
+                          {/* Expiry countdown / status alert */}
+                          {isExpired || res.status === "expired" ? (
+                            <div className="mt-1 text-[11px] text-red-600 font-semibold flex items-center gap-1">
+                              <span className="material-symbols-outlined text-xs">timer_off</span>
+                              Hold expired · Stock released back to pharmacy
+                            </div>
+                          ) : (res.status === "pending" || res.status === "ready") && expiryTime ? (
+                            <div className={`mt-1 text-[11px] font-medium flex items-center gap-1 ${hoursLeft <= 3 ? "text-red-600 font-bold animate-pulse" : "text-amber-700"}`}>
+                              <span className="material-symbols-outlined text-xs">hourglass_top</span>
+                              {hoursLeft > 0 ? `Hold expires in ~${hoursLeft}h (${expiryTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` : "Expiring shortly"}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
 

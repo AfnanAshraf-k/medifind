@@ -15,9 +15,17 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"user" | "pharmacy">("user");
+
+  // Pharmacy registration fields
+  const [pharmacyName, setPharmacyName] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [pharmacyPhone, setPharmacyPhone] = useState("");
+  const [pharmacyAddress, setPharmacyAddress] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("signup") === "true") {
@@ -30,8 +38,6 @@ function LoginForm() {
       setErrorMsg("Authentication link expired or invalid. Please try logging in again.");
     }
   }, [searchParams]);
-
-  const [resetSent, setResetSent] = useState(false);
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
@@ -54,19 +60,60 @@ function LoginForm() {
 
   const handleRedirect = async (userId: string) => {
     try {
-      // 1. Check profile role
+      // 1. Check profile role and suspension status
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, is_suspended, suspension_reason")
         .eq("id", userId)
         .maybeSingle();
 
+      if (profile?.is_suspended) {
+        await supabase.auth.signOut();
+        setErrorMsg(`Account Suspended: ${profile.suspension_reason || "Please contact platform support."}`);
+        setLoading(false);
+        return;
+      }
+
       let targetRole = profile?.role;
 
-      // 2. Fallback to auth metadata if profile row isn't immediately populated
+      // Fallback to auth metadata if profile row isn't immediately populated
       if (!targetRole) {
         const { data: userData } = await supabase.auth.getUser();
         targetRole = userData.user?.user_metadata?.role || role || "user";
+      }
+
+      // 2. If pharmacy role, verify pharmacy approval status
+      if (targetRole === "pharmacy") {
+        const { data: pharm } = await supabase
+          .from("pharmacies")
+          .select("id, status, is_suspended, rejection_reason")
+          .eq("owner_id", userId)
+          .maybeSingle();
+
+        if (pharm) {
+          if (pharm.is_suspended) {
+            await supabase.auth.signOut();
+            setErrorMsg("Your pharmacy account has been suspended by an administrator. Please contact support.");
+            setLoading(false);
+            return;
+          }
+
+          if (pharm.status === "pending") {
+            await supabase.auth.signOut();
+            setErrorMsg("Your registration is awaiting admin approval. Please check back once administrators verify your credentials.");
+            setLoading(false);
+            return;
+          }
+
+          if (pharm.status === "rejected") {
+            await supabase.auth.signOut();
+            setErrorMsg(
+              `Registration Rejected: ${pharm.rejection_reason || "Your application was not approved by platform administrators."}`
+            );
+            setLoading(false);
+            return;
+          }
+        }
       }
 
       const target =
@@ -90,6 +137,13 @@ function LoginForm() {
 
     try {
       if (isSignUp) {
+        // Validate pharmacy fields
+        if (role === "pharmacy") {
+          if (!pharmacyName.trim() || !licenseNumber.trim() || !pharmacyAddress.trim()) {
+            throw new Error("Pharmacy name, license number, and address are required for registration.");
+          }
+        }
+
         // Sign Up flow
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
@@ -99,6 +153,10 @@ function LoginForm() {
             data: {
               full_name: fullName.trim() || email.split("@")[0],
               role: role,
+              pharmacy_name: pharmacyName.trim(),
+              license_number: licenseNumber.trim(),
+              pharmacy_phone: pharmacyPhone.trim(),
+              pharmacy_address: pharmacyAddress.trim(),
             },
           },
         });
@@ -106,11 +164,32 @@ function LoginForm() {
         if (error) throw error;
 
         if (data.user) {
+          // If pharmacy registration, create the pharmacy entry with status 'pending'
+          if (role === "pharmacy") {
+            try {
+              await supabase.from("pharmacies").insert({
+                owner_id: data.user.id,
+                name: pharmacyName.trim(),
+                address: pharmacyAddress.trim(),
+                phone: pharmacyPhone.trim() || null,
+                license_number: licenseNumber.trim(),
+                status: "pending",
+                reservation_expiry_hours: 24,
+              });
+            } catch (pErr) {
+              console.warn("Pharmacy pre-registration note:", pErr);
+            }
+
+            await supabase.auth.signOut();
+            setSuccessMsg(
+              "Registration submitted successfully! Your pharmacy registration is awaiting admin approval. You will be able to log in once administrators verify your license credentials."
+            );
+            return;
+          }
+
           if (data.session) {
-            // User signed up and logged in immediately
             await handleRedirect(data.user.id);
           } else {
-            // Email confirmation required by Supabase project settings
             setSuccessMsg("Registration successful! Please check your email inbox to verify your account before signing in.");
           }
         }
@@ -202,9 +281,21 @@ function LoginForm() {
               </div>
             </div>
 
+            {role === "pharmacy" && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 space-y-1">
+                <p className="font-bold flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">verified_user</span>
+                  Administrator Verification Required
+                </p>
+                <p>
+                  Pharmacy partner registrations are reviewed by administrators. Once approved, you will be able to log in and list your inventory.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-xs">
               <label className="block font-label-md text-on-surface" htmlFor="fullName">
-                Full Name
+                {role === "pharmacy" ? "Contact Person / Pharmacist Name" : "Full Name"}
               </label>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
@@ -213,7 +304,7 @@ function LoginForm() {
                 <input
                   className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all"
                   id="fullName"
-                  placeholder={role === "pharmacy" ? "e.g., CarePlus Pharmacy (Dr. John)" : "John Doe"}
+                  placeholder={role === "pharmacy" ? "e.g., Dr. John Davis, RPh" : "John Doe"}
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -221,6 +312,90 @@ function LoginForm() {
                 />
               </div>
             </div>
+
+            {/* Extra Pharmacy Fields */}
+            {role === "pharmacy" && (
+              <>
+                <div className="space-y-xs">
+                  <label className="block font-label-md text-on-surface" htmlFor="pharmacyName">
+                    Pharmacy Legal Name *
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
+                      store
+                    </span>
+                    <input
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all"
+                      id="pharmacyName"
+                      placeholder="e.g., Central Care Pharmacy"
+                      type="text"
+                      value={pharmacyName}
+                      onChange={(e) => setPharmacyName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-xs">
+                  <label className="block font-label-md text-on-surface" htmlFor="licenseNumber">
+                    Pharmacy License / Registration Number *
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
+                      badge
+                    </span>
+                    <input
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all font-mono"
+                      id="licenseNumber"
+                      placeholder="e.g., PH-2026-88910"
+                      type="text"
+                      value={licenseNumber}
+                      onChange={(e) => setLicenseNumber(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-xs">
+                  <label className="block font-label-md text-on-surface" htmlFor="pharmacyAddress">
+                    Pharmacy Physical Address *
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
+                      location_on
+                    </span>
+                    <input
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all"
+                      id="pharmacyAddress"
+                      placeholder="e.g., 45 Healthcare Blvd, Kuttippuram"
+                      type="text"
+                      value={pharmacyAddress}
+                      onChange={(e) => setPharmacyAddress(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-xs">
+                  <label className="block font-label-md text-on-surface" htmlFor="pharmacyPhone">
+                    Contact Phone Number
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
+                      call
+                    </span>
+                    <input
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all"
+                      id="pharmacyPhone"
+                      placeholder="+91 98460 12345"
+                      type="text"
+                      value={pharmacyPhone}
+                      onChange={(e) => setPharmacyPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
@@ -278,14 +453,14 @@ function LoginForm() {
 
         {errorMsg && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-start gap-2">
-            <span className="material-symbols-outlined text-base mt-0.5">error</span>
+            <span className="material-symbols-outlined text-base mt-0.5 flex-shrink-0">error</span>
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
           <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800 flex items-start gap-2">
-            <span className="material-symbols-outlined text-base mt-0.5">check_circle</span>
+            <span className="material-symbols-outlined text-base mt-0.5 flex-shrink-0">check_circle</span>
             <span>{successMsg}</span>
           </div>
         )}
@@ -302,45 +477,51 @@ function LoginForm() {
             </span>
           ) : (
             <>
-              {isSignUp ? "Create Account" : "Sign In"}
+              {isSignUp ? (role === "pharmacy" ? "Submit Registration for Review" : "Create Account") : "Sign In"}
               <span className="material-symbols-outlined text-md">arrow_forward</span>
             </>
           )}
         </button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-on-surface-variant">
-        {isSignUp ? (
-          <span>
-            Already have an account?{" "}
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(false);
-                setErrorMsg("");
-                setSuccessMsg("");
-              }}
-              className="text-primary font-semibold hover:underline ml-1"
-            >
-              Sign In
-            </button>
-          </span>
-        ) : (
-          <span>
-            New to MediFind?{" "}
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(true);
-                setErrorMsg("");
-                setSuccessMsg("");
-              }}
-              className="text-primary font-semibold hover:underline ml-1"
-            >
-              Create Account
-            </button>
-          </span>
-        )}
+      <div className="mt-6 text-center text-sm text-on-surface-variant flex items-center justify-between">
+        <div>
+          {isSignUp ? (
+            <span>
+              Already have an account?{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(false);
+                  setErrorMsg("");
+                  setSuccessMsg("");
+                }}
+                className="text-primary font-semibold hover:underline ml-1"
+              >
+                Sign In
+              </button>
+            </span>
+          ) : (
+            <span>
+              New to MediFind?{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(true);
+                  setErrorMsg("");
+                  setSuccessMsg("");
+                }}
+                className="text-primary font-semibold hover:underline ml-1"
+              >
+                Create Account
+              </button>
+            </span>
+          )}
+        </div>
+
+        <Link href="/admin/login" className="text-xs text-slate-400 hover:text-slate-700 transition-colors">
+          Admin Portal &rarr;
+        </Link>
       </div>
     </div>
   );
@@ -357,9 +538,12 @@ export default function LoginPage() {
             </span>
             <span className="font-display text-headline-md md:text-display text-primary">MediFind</span>
           </Link>
-          <div>
+          <div className="flex items-center gap-4">
             <Link className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="/support">
               Support
+            </Link>
+            <Link className="text-xs text-slate-500 hover:text-primary font-mono transition-colors" href="/admin/login">
+              Admin Login
             </Link>
           </div>
         </div>
@@ -422,8 +606,11 @@ export default function LoginPage() {
               </Link>
             </div>
           </div>
-          <div className="mt-xl pt-lg border-t border-outline-variant/30 flex justify-center md:justify-start">
-            <p className="font-body-sm text-on-surface-variant">© 2026 MediFind Healthcare Systems. All rights reserved.</p>
+          <div className="mt-xl pt-lg border-t border-outline-variant/30 flex justify-between items-center text-xs text-on-surface-variant">
+            <p>© 2026 MediFind Healthcare Systems. All rights reserved.</p>
+            <Link href="/admin/login" className="hover:text-primary">
+              Master Admin Control Portal
+            </Link>
           </div>
         </div>
       </footer>

@@ -135,7 +135,11 @@ function SearchResultsContent() {
         let queryError: any = null;
 
         if (mode === "pharmacy") {
-          let query = supabase.from("pharmacies").select("*");
+          let query = supabase
+            .from("pharmacies")
+            .select("*")
+            .eq("status", "approved")
+            .eq("is_suspended", false);
           if (searchQuery) {
             query = query.ilike("name", `%${searchQuery}%`);
           }
@@ -161,7 +165,9 @@ function SearchResultsContent() {
               updated_at,
               pharmacy:pharmacies!inner(*),
               medicine:medicines!inner(*)
-            `);
+            `)
+            .eq("pharmacy.status", "approved")
+            .eq("pharmacy.is_suspended", false);
 
           if (searchQuery) {
             query = query.textSearch("medicine.name", searchQuery);

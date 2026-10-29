@@ -6,11 +6,20 @@ export async function middleware(request: NextRequest) {
     request: { headers: request.headers },
   });
 
-  const protectedRoutes = ["/dashboard", "/pharmacy/dashboard", "/admin"];
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    request.nextUrl.pathname === route ||
-    request.nextUrl.pathname.startsWith(route + "/")
-  );
+  const pathname = request.nextUrl.pathname;
+
+  // Dedicated admin login page is public
+  if (pathname === "/admin/login") {
+    return response;
+  }
+
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isProtectedRoute =
+    isAdminRoute ||
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/") ||
+    pathname === "/pharmacy/dashboard" ||
+    pathname.startsWith("/pharmacy/dashboard/");
 
   // Allow public pages immediately without blocking
   if (!isProtectedRoute) {
@@ -24,7 +33,7 @@ export async function middleware(request: NextRequest) {
 
   if (!hasAuthCookie) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = isAdminRoute ? "/admin/login" : "/login";
     return NextResponse.redirect(url);
   }
 
@@ -60,12 +69,26 @@ export async function middleware(request: NextRequest) {
 
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = "/login";
+      url.pathname = isAdminRoute ? "/admin/login" : "/login";
       return NextResponse.redirect(url);
     }
+
+    // Role-based protection for admin routes
+    if (isAdminRoute) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, is_suspended")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!profile || profile.role !== "admin" || profile.is_suspended) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/admin/login";
+        url.searchParams.set("error", "unauthorized");
+        return NextResponse.redirect(url);
+      }
+    }
   } catch (err) {
-    // If server-side network call times out or fails (e.g. sandbox or network glitch),
-    // let client-side component in the user's browser handle validation
     console.warn("Middleware auth verification deferred to client:", (err as any)?.message);
     return response;
   }

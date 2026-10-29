@@ -20,7 +20,7 @@ export default function PharmacyInventoryDashboard() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [activeTab, setActiveTab] = useState<"inventory" | "orders">("inventory");
+  const [activeTab, setActiveTab] = useState<"inventory" | "orders" | "settings">("inventory");
   const [ordersList, setOrdersList] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
@@ -33,9 +33,15 @@ export default function PharmacyInventoryDashboard() {
   const [newPharmName, setNewPharmName] = useState("");
   const [newPharmAddress, setNewPharmAddress] = useState("");
   const [newPharmPhone, setNewPharmPhone] = useState("");
+  const [newPharmLicense, setNewPharmLicense] = useState("");
   const [newPharmLat, setNewPharmLat] = useState("10.8878");
   const [newPharmLng, setNewPharmLng] = useState("76.0732");
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Expiry window setting state
+  const [expiryHoursSetting, setExpiryHoursSetting] = useState<number>(24);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsNotice, setSettingsNotice] = useState<string>("");
 
   // Inventory lists
   const [stockList, setStockList] = useState<any[]>([]);
@@ -85,6 +91,7 @@ export default function PharmacyInventoryDashboard() {
       if (pharm) {
         setMyPharmacy(pharm);
         setNewPharmName(pharm.name);
+        setExpiryHoursSetting(pharm.reservation_expiry_hours || 24);
       }
     }
     setPharmacyLoading(false);
@@ -122,6 +129,7 @@ export default function PharmacyInventoryDashboard() {
           quantity,
           status,
           created_at,
+          expires_at,
           prescription_url,
           user:profiles(id, full_name, email),
           pharmacy_stock:pharmacy_stock_id!inner(
@@ -243,6 +251,9 @@ export default function PharmacyInventoryDashboard() {
           name: newPharmName,
           address: newPharmAddress,
           phone: newPharmPhone,
+          license_number: newPharmLicense,
+          status: "pending",
+          reservation_expiry_hours: 24,
           lat: parseFloat(newPharmLat) || 10.8878,
           lng: parseFloat(newPharmLng) || 76.0732,
           hours: {
@@ -263,6 +274,32 @@ export default function PharmacyInventoryDashboard() {
       setErrorMsg(err.message || "Failed to create pharmacy profile.");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleSaveExpirySetting = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettingsNotice("");
+    if (expiryHoursSetting < 1 || expiryHoursSetting > 72) {
+      alert("Expiry window must be between 1 and 72 hours.");
+      return;
+    }
+
+    setSavingSettings(true);
+    try {
+      const { error } = await supabase
+        .from("pharmacies")
+        .update({ reservation_expiry_hours: expiryHoursSetting })
+        .eq("id", myPharmacy.id);
+
+      if (error) throw error;
+      setSettingsNotice("Settings saved! All new reservations will now expire after " + expiryHoursSetting + " hours.");
+      setMyPharmacy({ ...myPharmacy, reservation_expiry_hours: expiryHoursSetting });
+      setTimeout(() => setSettingsNotice(""), 5000);
+    } catch (err: any) {
+      alert(err.message || "Failed to update expiry setting");
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -376,12 +413,12 @@ export default function PharmacyInventoryDashboard() {
         <div className="max-w-md w-full bg-white border border-outline-variant p-8 rounded-xl shadow-sm space-y-4">
           <h2 className="text-headline-lg font-display text-on-surface mb-2">Register Your Pharmacy</h2>
           <p className="text-body-md text-on-surface-variant mb-6">
-            Create your pharmacy profile to start managing inventory.
+            Create your pharmacy profile to start managing inventory once verified by administrators.
           </p>
           {errorMsg && <p className="text-error text-body-sm">{errorMsg}</p>}
           <form onSubmit={handleCreatePharmacy} className="space-y-4">
             <div>
-              <label className="block text-label-md font-bold mb-1">Pharmacy Name</label>
+              <label className="block text-label-md font-bold mb-1">Pharmacy Legal Name *</label>
               <input
                 required
                 type="text"
@@ -392,12 +429,23 @@ export default function PharmacyInventoryDashboard() {
               />
             </div>
             <div>
-              <label className="block text-label-md font-bold mb-1">Address</label>
+              <label className="block text-label-md font-bold mb-1">Pharmacy License Number *</label>
+              <input
+                required
+                type="text"
+                className="w-full border border-outline-variant rounded-lg p-2.5 bg-surface-container-lowest font-mono"
+                placeholder="PH-2026-XXXXX"
+                value={newPharmLicense}
+                onChange={(e) => setNewPharmLicense(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-label-md font-bold mb-1">Address *</label>
               <input
                 required
                 type="text"
                 className="w-full border border-outline-variant rounded-lg p-2.5 bg-surface-container-lowest"
-                placeholder="123 Health Ave, London"
+                placeholder="123 Health Ave, Kuttippuram"
                 value={newPharmAddress}
                 onChange={(e) => setNewPharmAddress(e.target.value)}
               />
@@ -408,7 +456,7 @@ export default function PharmacyInventoryDashboard() {
                 required
                 type="text"
                 className="w-full border border-outline-variant rounded-lg p-2.5 bg-surface-container-lowest"
-                placeholder="+44 20 7946 0958"
+                placeholder="+91 98460 00000"
                 value={newPharmPhone}
                 onChange={(e) => setNewPharmPhone(e.target.value)}
               />
@@ -442,9 +490,128 @@ export default function PharmacyInventoryDashboard() {
               className="w-full bg-primary text-on-primary py-3 rounded-lg font-label-md hover:bg-surface-tint transition-all"
               disabled={actionLoading}
             >
-              {actionLoading ? "Registering..." : "Register Pharmacy"}
+              {actionLoading ? "Submitting for Review..." : "Submit Pharmacy for Approval"}
             </button>
           </form>
+        </div>
+      </div>
+    );
+  }
+
+  // Feature 2: A pending pharmacy cannot log in / access inventory
+  if (myPharmacy.status === "pending") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-lg w-full bg-white border border-slate-200 p-8 rounded-2xl shadow-xl text-center space-y-5">
+          <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+            <span className="material-symbols-outlined text-3xl">hourglass_top</span>
+          </div>
+
+          <div>
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200 mb-2">
+              Registration Awaiting Admin Approval
+            </span>
+            <h2 className="text-2xl font-bold text-slate-900">Verification in Progress</h2>
+          </div>
+
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Your pharmacy registration for <strong>"{myPharmacy.name}"</strong> has been recorded and is currently awaiting verification by platform administrators.
+          </p>
+
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-left text-xs text-slate-700 space-y-2">
+            <p className="font-semibold text-slate-800 border-b border-slate-200 pb-1.5">Submitted Registration Details:</p>
+            <p><span className="text-slate-500">License Number:</span> <span className="font-mono font-bold">{myPharmacy.license_number || "Pending"}</span></p>
+            <p><span className="text-slate-500">Address:</span> {myPharmacy.address}</p>
+            <p><span className="text-slate-500">Contact:</span> {myPharmacy.phone || "Not entered"}</p>
+            <p><span className="text-slate-500">Status:</span> <span className="text-amber-700 font-bold">Awaiting Super-Admin Review</span></p>
+          </div>
+
+          <div className="text-xs text-slate-500 bg-amber-50/70 p-3 rounded-lg border border-amber-200/50">
+            ℹ️ To protect patients and prevent unauthorized medicine listings, only licensed pharmacies approved by administrators can manage stock and receive customer reservations.
+          </div>
+
+          <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+            <Link href="/" className="text-xs text-primary font-semibold hover:underline">
+              &larr; Return to Home
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Feature 2: A rejected pharmacy is blocked from access
+  if (myPharmacy.status === "rejected") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-lg w-full bg-white border border-red-200 p-8 rounded-2xl shadow-xl text-center space-y-5">
+          <div className="w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-200">
+            <span className="material-symbols-outlined text-3xl">block</span>
+          </div>
+
+          <div>
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase bg-red-100 text-red-800 border border-red-200 mb-2">
+              Registration Application Rejected
+            </span>
+            <h2 className="text-2xl font-bold text-slate-900">Application Not Approved</h2>
+          </div>
+
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-left text-xs text-red-800 space-y-1.5">
+            <p className="font-bold flex items-center gap-1.5 text-sm">
+              <span className="material-symbols-outlined text-base">info</span>
+              Administrator Decision Notes:
+            </p>
+            <p className="text-red-900 bg-white p-2.5 rounded-lg border border-red-200">
+              {myPharmacy.rejection_reason || "Credentials or medical licensing could not be verified by platform administrators."}
+            </p>
+          </div>
+
+          <p className="text-xs text-slate-500">
+            If you believe this decision was made in error or wish to submit updated documentation, please contact our administrative support team.
+          </p>
+
+          <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+            <Link href="/support" className="text-xs text-primary font-semibold hover:underline">
+              Contact Support
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Suspended state
+  if (myPharmacy.is_suspended) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-lg w-full bg-white border border-slate-200 p-8 rounded-2xl shadow-xl text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-3xl">pause_circle</span>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900">Pharmacy Temporarily Suspended</h2>
+          <p className="text-xs text-slate-600">
+            Your pharmacy listings have been temporarily deactivated by platform administrators. Please contact customer support for further information.
+          </p>
+          <div className="pt-4 flex justify-center gap-3">
+            <Link href="/support" className="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-xl">
+              Pharmacy Support
+            </Link>
+            <button onClick={handleLogout} className="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl">
+              Sign Out
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -487,6 +654,18 @@ export default function PharmacyInventoryDashboard() {
             >
               <span className="material-symbols-outlined">receipt_long</span>
               <span className="text-label-md font-label-md">User Reservations</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`w-[calc(100%-1rem)] rounded-full mx-2 px-4 py-3 flex items-center gap-3 active:scale-95 transition-transform duration-150 text-left ${
+                activeTab === "settings"
+                  ? "bg-secondary-container text-on-secondary-container font-bold shadow-sm"
+                  : "text-on-surface-variant hover:bg-surface-variant"
+              }`}
+            >
+              <span className="material-symbols-outlined">settings</span>
+              <span className="text-label-md font-label-md">Expiry & Settings</span>
             </button>
 
             <button
@@ -671,7 +850,7 @@ export default function PharmacyInventoryDashboard() {
             <section className="bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm text-on-surface">
               <div className="px-xl py-lg border-b border-outline-variant flex flex-col md:flex-row md:items-center justify-between gap-md bg-surface-container-low">
                 <h4 className="text-headline-md font-headline-md">
-                  {activeTab === "inventory" ? "Inventory Master List" : "Active Medicine Reservations"}
+                  {activeTab === "inventory" ? "Inventory Master List" : activeTab === "orders" ? "Active Medicine Reservations" : "Pharmacy Settings"}
                 </h4>
                 <div className="flex gap-sm">
                   <button className="px-md py-2 bg-surface border border-outline rounded-lg text-body-sm flex items-center gap-2 hover:bg-surface-container transition-colors">
@@ -817,7 +996,7 @@ export default function PharmacyInventoryDashboard() {
                     </div>
                   </div>
                 </>
-              ) : (
+              ) : activeTab === "orders" ? (
                 <>
                   <div className="overflow-x-auto animate-in fade-in duration-200">
                     <table className="w-full text-left border-collapse">
@@ -829,6 +1008,7 @@ export default function PharmacyInventoryDashboard() {
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Total Price</th>
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Prescription</th>
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Reserved Date</th>
+                          <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Expiry Deadline</th>
                           <th className="px-md py-md text-label-md font-label-md text-on-surface-variant">Status</th>
                           <th className="px-xl py-md text-label-md font-label-md text-on-surface-variant text-right">
                             Actions
@@ -838,13 +1018,13 @@ export default function PharmacyInventoryDashboard() {
                       <tbody className="text-body-sm divide-y divide-outline-variant">
                         {ordersLoading ? (
                           <tr>
-                            <td colSpan={8} className="px-xl py-8 text-center text-on-surface-variant">
+                            <td colSpan={9} className="px-xl py-8 text-center text-on-surface-variant">
                               Loading reservations...
                             </td>
                           </tr>
                         ) : ordersList.length === 0 ? (
                           <tr>
-                            <td colSpan={8} className="px-xl py-8 text-center text-on-surface-variant">
+                            <td colSpan={9} className="px-xl py-8 text-center text-on-surface-variant">
                               No active reservations found for your pharmacy.
                             </td>
                           </tr>
@@ -861,6 +1041,7 @@ export default function PharmacyInventoryDashboard() {
                               ready: "bg-green-100 text-green-700 border-green-200",
                               collected: "bg-blue-100 text-blue-700 border-blue-200",
                               cancelled: "bg-slate-100 text-slate-500 border-slate-200",
+                              expired: "bg-red-100 text-red-700 border-red-200",
                             };
 
                             const statusLabels: any = {
@@ -868,7 +1049,13 @@ export default function PharmacyInventoryDashboard() {
                               ready: "Ready for Pickup",
                               collected: "Collected",
                               cancelled: "Cancelled",
+                              expired: "Expired",
                             };
+
+                            const expiryTime = order.expires_at ? new Date(order.expires_at) : null;
+                            const isExpired = order.status === "expired" || (expiryTime && expiryTime.getTime() < Date.now() && order.status === "pending");
+                            const msLeft = expiryTime ? expiryTime.getTime() - Date.now() : 0;
+                            const hoursLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60)));
 
                             return (
                               <tr key={order.id} className="zebra-row hover:bg-primary-fixed/30 transition-colors">
@@ -898,6 +1085,28 @@ export default function PharmacyInventoryDashboard() {
                                 </td>
                                 <td className="px-md py-md text-on-surface-variant">
                                   {new Date(order.created_at).toLocaleDateString()}
+                                </td>
+                                <td className="px-md py-md text-body-sm">
+                                  {isExpired || order.status === "expired" ? (
+                                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-700 border border-red-200">
+                                      EXPIRED
+                                    </span>
+                                  ) : order.status === "collected" ? (
+                                    <span className="text-xs text-slate-400">Fulfilled</span>
+                                  ) : order.status === "cancelled" ? (
+                                    <span className="text-xs text-slate-400">Cancelled</span>
+                                  ) : expiryTime ? (
+                                    <div className="flex flex-col">
+                                      <span className={`text-xs font-semibold ${hoursLeft <= 3 ? "text-red-600 animate-pulse font-bold" : "text-amber-700"}`}>
+                                        ⏱ {hoursLeft > 0 ? `${hoursLeft}h left` : "Expiring now"}
+                                      </span>
+                                      <span className="text-[10px] text-on-surface-variant">
+                                        {expiryTime.toLocaleDateString([], { month: "short", day: "numeric" })}, {expiryTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-on-surface-variant">24h default</span>
+                                  )}
                                 </td>
                                 <td className="px-md py-md">
                                   <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusColors[order.status] || "bg-amber-100 text-amber-700"}`}>
@@ -943,6 +1152,109 @@ export default function PharmacyInventoryDashboard() {
                     </span>
                   </div>
                 </>
+              ) : (
+                <div className="p-xl space-y-xl animate-in fade-in duration-200">
+                  {settingsNotice && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-semibold flex items-center gap-2">
+                      <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+                      {settingsNotice}
+                    </div>
+                  )}
+
+                  <div className="bg-surface border border-outline-variant rounded-2xl p-lg md:p-xl space-y-md">
+                    <div className="flex items-center gap-3 border-b border-outline-variant pb-md">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                        <span className="material-symbols-outlined">timer</span>
+                      </div>
+                      <div>
+                        <h3 className="text-title-lg font-bold text-on-surface">Reservation Expiry Window</h3>
+                        <p className="text-body-sm text-on-surface-variant">Configure how long patient reservations remain valid before automatic cancellation.</p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleSaveExpirySetting} className="space-y-md pt-sm max-w-xl">
+                      <div className="space-y-sm">
+                        <label className="text-label-md font-bold text-on-surface flex items-center justify-between">
+                          <span>Expiry Window (Hours)</span>
+                          <span className="text-body-xs font-normal text-on-surface-variant">Allowed: 1 to 72 hours</span>
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="number"
+                            min={1}
+                            max={72}
+                            required
+                            value={expiryHoursSetting}
+                            onChange={(e) => setExpiryHoursSetting(parseInt(e.target.value) || 1)}
+                            className="w-36 px-4 py-2.5 bg-surface border border-outline rounded-xl text-base font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
+                          <span className="text-body-sm font-semibold text-on-surface-variant">hours from order creation</span>
+                        </div>
+                        <p className="text-body-xs text-on-surface-variant leading-relaxed">
+                          💡 <strong>How this works:</strong> When a customer reserves medicine from your pharmacy, their hold will automatically expire after this period unless fulfilled. Uncollected stock is returned to your available inventory. Existing active reservations will keep their original deadline.
+                        </p>
+                      </div>
+
+                      <div className="pt-sm">
+                        <button
+                          type="submit"
+                          disabled={savingSettings}
+                          className="px-6 py-2.5 bg-primary text-on-primary rounded-xl font-label-md font-bold hover:bg-surface-tint transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                        >
+                          {savingSettings ? (
+                            <>
+                              <span className="animate-spin material-symbols-outlined text-sm">progress_activity</span>
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <span className="material-symbols-outlined text-sm">save</span>
+                              Save Expiry Window
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  <div className="bg-surface border border-outline-variant rounded-2xl p-lg md:p-xl space-y-md">
+                    <div className="flex items-center gap-3 border-b border-outline-variant pb-md">
+                      <div className="w-10 h-10 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold">
+                        <span className="material-symbols-outlined">verified</span>
+                      </div>
+                      <div>
+                        <h3 className="text-title-lg font-bold text-on-surface">Registered Pharmacy Information</h3>
+                        <p className="text-body-sm text-on-surface-variant">Details verified and approved by the platform administration team.</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-md pt-sm">
+                      <div className="p-md bg-surface-container-low rounded-xl border border-outline-variant space-y-1">
+                        <span className="text-body-xs text-on-surface-variant uppercase font-bold tracking-wider">License Number</span>
+                        <p className="text-body-md font-mono font-bold text-on-surface">{myPharmacy.license_number || "Verified On-File"}</p>
+                      </div>
+
+                      <div className="p-md bg-surface-container-low rounded-xl border border-outline-variant space-y-1">
+                        <span className="text-body-xs text-on-surface-variant uppercase font-bold tracking-wider">Verification Status</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200 inline-flex items-center gap-1">
+                            <span className="material-symbols-outlined text-xs">check_circle</span> APPROVED &amp; ACTIVE
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-md bg-surface-container-low rounded-xl border border-outline-variant space-y-1">
+                        <span className="text-body-xs text-on-surface-variant uppercase font-bold tracking-wider">Physical Address</span>
+                        <p className="text-body-sm text-on-surface font-medium">{myPharmacy.address}</p>
+                      </div>
+
+                      <div className="p-md bg-surface-container-low rounded-xl border border-outline-variant space-y-1">
+                        <span className="text-body-xs text-on-surface-variant uppercase font-bold tracking-wider">Contact Phone</span>
+                        <p className="text-body-sm text-on-surface font-medium">{myPharmacy.phone || "Not configured"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
             </section>
 
