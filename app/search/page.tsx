@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import NavBar from "@/app/components/NavBar";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 3958.8; // Radius of the Earth in miles
@@ -119,7 +120,7 @@ function SearchResultsContent() {
           setLocationLabel(`Near ${closestTown.name} (Detected via GPS)`);
         },
         () => {
-          console.log("Using default location coordinates.");
+          console.warn("Using default location coordinates.");
           setLocationLabel("Valanchery Town Center (Default)");
         }
       );
@@ -360,55 +361,31 @@ function SearchResultsContent() {
 
   return (
     <div className="bg-background text-on-background font-body-md selection:bg-primary-container selection:text-on-primary-container">
-      <header className="w-full top-0 sticky z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline flat no shadows">
-        <div className="flex justify-between items-center h-16 px-gutter max-w-max-width mx-auto">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="text-headline-md font-headline-md text-primary dark:text-primary-fixed-dim cursor-pointer">
-              MediFind
-            </Link>
-            <nav className="hidden md:flex gap-6">
-              <Link className={`font-label-md transition-all cursor-pointer ${mode !== "pharmacy" ? "text-primary border-b-2 border-primary pb-1" : "text-on-surface-variant hover:text-primary-container"}`} href="/search">
-                Find Medicine
-              </Link>
-              <Link className={`font-label-md transition-all cursor-pointer ${mode === "pharmacy" ? "text-primary border-b-2 border-primary pb-1" : "text-on-surface-variant hover:text-primary-container"}`} href="/search?mode=pharmacy">
-                Pharmacies
-              </Link>
-              <Link className="text-on-surface-variant font-label-md hover:text-primary-container transition-colors cursor-pointer" href="/support">
-                Support
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <form onSubmit={handleSearchSubmit} className="hidden sm:flex items-center bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant">
-              <span className="material-symbols-outlined text-on-surface-variant mr-2" style={{ fontSize: "20px" }}>
-                search
-              </span>
-              <input
-                className="bg-transparent border-none focus:ring-0 text-body-sm w-48 text-on-surface"
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder={mode === "pharmacy" ? "Search pharmacies..." : "Search medicines..."}
-              />
-            </form>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleMockLocationChange("current")}
-                title="Detect current location"
-                className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all"
-              >
-                location_on
-              </button>
-              <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
-                notifications
-              </button>
-            </div>
-            <Link href="/login" className="hidden lg:block bg-primary text-on-primary px-4 py-2 rounded-lg font-label-md hover:opacity-90 active:opacity-80 transition-all">
-              Login / Sign Up
-            </Link>
-          </div>
-        </div>
-      </header>
+      <NavBar
+        centerSlot={
+          <form onSubmit={handleSearchSubmit} className="flex items-center bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant w-full">
+            <span className="material-symbols-outlined text-on-surface-variant mr-2" style={{ fontSize: "20px" }}>
+              search
+            </span>
+            <input
+              className="bg-transparent border-none focus:ring-0 text-body-sm flex-1 text-on-surface"
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={mode === "pharmacy" ? "Search pharmacies..." : "Search medicines..."}
+            />
+          </form>
+        }
+        rightIconSlot={
+          <button
+            onClick={() => handleMockLocationChange("current")}
+            title="Detect current location"
+            className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all"
+          >
+            location_on
+          </button>
+        }
+      />
 
       <main className="max-w-max-width mx-auto px-gutter py-xl">
         <div className="mb-xl flex flex-col md:flex-row md:items-end justify-between gap-md">

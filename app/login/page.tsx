@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -16,22 +17,87 @@ export default function LoginPage() {
   const [role, setRole] = useState<"user" | "pharmacy">("user");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
+  useEffect(() => {
+    if (searchParams.get("signup") === "true") {
+      setIsSignUp(true);
+    }
+    if (searchParams.get("role") === "pharmacy") {
+      setRole("pharmacy");
+    }
+    if (searchParams.get("error") === "auth-code-error") {
+      setErrorMsg("Authentication link expired or invalid. Please try logging in again.");
+    }
+  }, [searchParams]);
+
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setErrorMsg("Please enter your email address first, then click Forgot Password.");
+      return;
+    }
+    setLoading(true);
+    setErrorMsg("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
+    });
+    setLoading(false);
+    if (error) {
+      setErrorMsg(error.message);
+    } else {
+      setResetSent(true);
+      setSuccessMsg("Password reset email sent! Check your inbox.");
+    }
+  };
+
+  const handleRedirect = async (userId: string) => {
+    try {
+      // 1. Check profile role
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle();
+
+      let targetRole = profile?.role;
+
+      // 2. Fallback to auth metadata if profile row isn't immediately populated
+      if (!targetRole) {
+        const { data: userData } = await supabase.auth.getUser();
+        targetRole = userData.user?.user_metadata?.role || role || "user";
+      }
+
+      const target =
+        targetRole === "admin"
+          ? "/admin"
+          : targetRole === "pharmacy"
+          ? "/pharmacy/dashboard"
+          : "/dashboard";
+
+      window.location.href = target;
+    } catch {
+      window.location.href = "/dashboard";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
+    setSuccessMsg("");
 
     try {
       if (isSignUp) {
         // Sign Up flow
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
             data: {
-              full_name: fullName || email.split("@")[0],
+              full_name: fullName.trim() || email.split("@")[0],
               role: role,
             },
           },
@@ -40,18 +106,18 @@ export default function LoginPage() {
         if (error) throw error;
 
         if (data.user) {
-          // Check if user requires email verification or is already signed in
           if (data.session) {
-            // Logged in immediately
+            // User signed up and logged in immediately
             await handleRedirect(data.user.id);
           } else {
-            setErrorMsg("Registration successful! Please check your email to verify your account.");
+            // Email confirmation required by Supabase project settings
+            setSuccessMsg("Registration successful! Please check your email inbox to verify your account before signing in.");
           }
         }
       } else {
         // Sign In flow
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.trim(),
           password,
         });
 
@@ -62,48 +128,239 @@ export default function LoginPage() {
         }
       }
     } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred. Please try again.");
+      console.error("Auth error:", err);
+      setErrorMsg(err.message || "An error occurred. Please verify your credentials and try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRedirect = async (userId: string) => {
-    // Fetch profile to get role
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .single();
+  return (
+    <div className="clinical-card rounded-xl p-8 md:p-10 bg-white border border-outline-variant shadow-sm">
+      <form onSubmit={handleSubmit} className="space-y-md">
+        {/* Toggle between Sign In / Sign Up at top of card */}
+        <div className="flex bg-surface-container-low p-1 rounded-xl mb-4 border border-outline-variant/60">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(false);
+              setErrorMsg("");
+              setSuccessMsg("");
+            }}
+            className={`flex-1 py-2 text-center text-sm font-semibold rounded-lg transition-all ${
+              !isSignUp ? "bg-white text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(true);
+              setErrorMsg("");
+              setSuccessMsg("");
+            }}
+            className={`flex-1 py-2 text-center text-sm font-semibold rounded-lg transition-all ${
+              isSignUp ? "bg-white text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            Create Account
+          </button>
+        </div>
 
-    if (error || !profile) {
-      router.push("/dashboard");
-      return;
-    }
+        {isSignUp && (
+          <>
+            <div className="space-y-xs">
+              <label className="block font-label-md text-on-surface" htmlFor="role">
+                I want to register as
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRole("user")}
+                  className={`py-2.5 px-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-all ${
+                    role === "user"
+                      ? "border-primary bg-primary/10 text-primary font-semibold"
+                      : "border-outline-variant bg-surface text-on-surface-variant hover:border-outline"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-base">person</span>
+                  Patient / User
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("pharmacy")}
+                  className={`py-2.5 px-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-all ${
+                    role === "pharmacy"
+                      ? "border-primary bg-primary/10 text-primary font-semibold"
+                      : "border-outline-variant bg-surface text-on-surface-variant hover:border-outline"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-base">local_pharmacy</span>
+                  Pharmacy Owner
+                </button>
+              </div>
+            </div>
 
-    if (profile.role === "admin") {
-      router.push("/admin");
-    } else if (profile.role === "pharmacy") {
-      router.push("/pharmacy/dashboard");
-    } else {
-      router.push("/dashboard");
-    }
-  };
+            <div className="space-y-xs">
+              <label className="block font-label-md text-on-surface" htmlFor="fullName">
+                Full Name
+              </label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
+                  person
+                </span>
+                <input
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all"
+                  id="fullName"
+                  placeholder={role === "pharmacy" ? "e.g., CarePlus Pharmacy (Dr. John)" : "John Doe"}
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          </>
+        )}
 
+        <div className="space-y-xs">
+          <label className="block font-label-md text-on-surface" htmlFor="email">
+            Email Address
+          </label>
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
+              mail
+            </span>
+            <input
+              className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all"
+              id="email"
+              placeholder="name@example.com"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-xs">
+          <div className="flex justify-between items-center">
+            <label className="block font-label-md text-on-surface" htmlFor="password">
+              Password
+            </label>
+            {!isSignUp && (
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="font-label-sm text-primary hover:underline bg-transparent border-none p-0 cursor-pointer"
+              >
+                Forgot Password?
+              </button>
+            )}
+          </div>
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
+              lock
+            </span>
+            <input
+              className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all"
+              id="password"
+              placeholder="••••••••"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+            />
+          </div>
+        </div>
+
+        {errorMsg && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-start gap-2">
+            <span className="material-symbols-outlined text-base mt-0.5">error</span>
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800 flex items-start gap-2">
+            <span className="material-symbols-outlined text-base mt-0.5">check_circle</span>
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        <button
+          className="w-full bg-primary text-on-primary font-label-md py-4 rounded-xl hover:bg-primary/90 active:scale-[0.99] transition-all flex justify-center items-center gap-2 shadow-sm disabled:opacity-50"
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="animate-spin material-symbols-outlined text-base">progress_activity</span>
+              Processing...
+            </span>
+          ) : (
+            <>
+              {isSignUp ? "Create Account" : "Sign In"}
+              <span className="material-symbols-outlined text-md">arrow_forward</span>
+            </>
+          )}
+        </button>
+      </form>
+
+      <div className="mt-6 text-center text-sm text-on-surface-variant">
+        {isSignUp ? (
+          <span>
+            Already have an account?{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(false);
+                setErrorMsg("");
+                setSuccessMsg("");
+              }}
+              className="text-primary font-semibold hover:underline ml-1"
+            >
+              Sign In
+            </button>
+          </span>
+        ) : (
+          <span>
+            New to MediFind?{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(true);
+                setErrorMsg("");
+                setSuccessMsg("");
+              }}
+              className="text-primary font-semibold hover:underline ml-1"
+            >
+              Create Account
+            </button>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col bg-surface">
       <header className="w-full top-0 sticky bg-surface border-b border-outline-variant h-16 flex items-center px-margin-mobile md:px-margin-desktop z-50">
         <div className="flex justify-between items-center w-full max-w-max-width mx-auto">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
             <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
               medical_services
             </span>
             <span className="font-display text-headline-md md:text-display text-primary">MediFind</span>
-          </div>
+          </Link>
           <div>
-            <a className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="#">
-              Emergency
-            </a>
+            <Link className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="/support">
+              Support
+            </Link>
           </div>
         </div>
       </header>
@@ -116,144 +373,16 @@ export default function LoginPage() {
         <div className="w-full max-w-md z-10">
           <div className="text-center mb-xl">
             <h1 className="font-headline-lg text-on-surface mb-xs">
-              {isSignUp ? "Create Account" : "Welcome Back"}
+              Welcome to MediFind
             </h1>
             <p className="font-body-md text-on-surface-variant">
-              {isSignUp
-                ? "Join MediFind to manage stock or locate medicine instantly."
-                : "Securely manage your prescriptions and find medicine fast."}
+              Securely manage your prescriptions and find medicine fast.
             </p>
           </div>
 
-          <div className="clinical-card rounded-xl p-8 md:p-10 bg-white border border-outline-variant">
-            <form onSubmit={handleSubmit} className="space-y-md">
-              {isSignUp && (
-                <div className="space-y-xs">
-                  <label className="block font-label-md text-on-surface" htmlFor="fullName">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
-                      person
-                    </span>
-                    <input
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all"
-                      id="fullName"
-                      placeholder="John Doe"
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-xs">
-                <label className="block font-label-md text-on-surface" htmlFor="email">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
-                    mail
-                  </span>
-                  <input
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all"
-                    id="email"
-                    placeholder="name@hospital.com"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-xs">
-                <div className="flex justify-between items-center">
-                  <label className="block font-label-md text-on-surface" htmlFor="password">
-                    Password
-                  </label>
-                  {!isSignUp && (
-                    <a className="font-label-sm text-primary hover:underline" href="#">
-                      Forgot Password?
-                    </a>
-                  )}
-                </div>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
-                    lock
-                  </span>
-                  <input
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md transition-all"
-                    id="password"
-                    placeholder="••••••••"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              {isSignUp && (
-                <div className="space-y-xs pt-1">
-                  <p className="text-xs text-on-surface-variant bg-surface-container-low p-3 rounded-lg border border-outline-variant/50 leading-relaxed">
-                    ℹ️ <strong>Pharmacy Owners:</strong> Store registration requires administrator verification. Please sign up as a user below, or contact support to request an owner account.
-                  </p>
-                </div>
-              )}
-
-              {!isSignUp && (
-                <div className="flex items-center gap-2 py-2">
-                  <input
-                    className="w-4 h-4 text-primary border-outline-variant rounded focus:ring-primary"
-                    id="remember"
-                    type="checkbox"
-                  />
-                  <label className="font-body-sm text-on-surface-variant" htmlFor="remember">
-                    Remember this device
-                  </label>
-                </div>
-              )}
-
-              {errorMsg && (
-                <p className={`text-body-sm ${errorMsg.includes("successful") ? "text-green-600" : "text-error"}`}>
-                  {errorMsg}
-                </p>
-              )}
-
-              <button
-                className="w-full bg-primary text-on-primary font-label-md py-4 rounded-full hover:bg-primary-container active:opacity-80 transition-all flex justify-center items-center gap-2 shadow-sm disabled:opacity-50"
-                type="submit"
-                disabled={loading}
-              >
-                {loading ? "Processing..." : isSignUp ? "Create Account" : "Sign In"}
-                <span className="material-symbols-outlined text-md">arrow_forward</span>
-              </button>
-            </form>
-
-            <div className="relative my-xl">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-outline-variant"></div>
-              </div>
-              <div className="relative flex justify-center text-body-sm">
-                <span className="bg-white px-4 text-on-surface-variant">
-                  {isSignUp ? "Already have an account?" : "New to MediFind?"}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setErrorMsg("");
-              }}
-              className="w-full border border-outline text-on-surface font-label-md py-3 rounded-full hover:bg-surface-variant transition-all flex justify-center items-center gap-2"
-            >
-              {isSignUp ? "Sign in to existing account" : "Sign up for an account"}
-            </button>
-          </div>
+          <Suspense fallback={<div className="p-8 text-center text-on-surface-variant">Loading form...</div>}>
+            <LoginForm />
+          </Suspense>
 
           <div className="mt-xl grid grid-cols-3 gap-md opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
             <div className="bg-surface-container rounded-lg p-4 flex flex-col items-center justify-center text-center">
@@ -287,9 +416,6 @@ export default function LoginPage() {
               </a>
               <a className="text-on-surface-variant font-body-sm hover:underline hover:text-primary transition-all" href="#">
                 Terms of Service
-              </a>
-              <a className="text-on-surface-variant font-body-sm hover:underline hover:text-primary transition-all" href="#">
-                Pharmacy Portal
               </a>
               <Link className="text-on-surface-variant font-body-sm hover:underline hover:text-primary transition-all" href="/support">
                 Support

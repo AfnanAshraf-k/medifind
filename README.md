@@ -68,6 +68,16 @@ The project demonstrates important web development concepts such as user authent
    ```
    Open [http://localhost:3000](http://localhost:3000).
 
+### 🚀 Vercel Deployment
+1. Connect your repository to Vercel.
+2. In **Settings > Environment Variables**, add the following:
+   | Key | Value | Description |
+   | :--- | :--- | :--- |
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://wnvytubydwljqulujmuh.supabase.co` | Supabase API URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `sb_publishable_UR6aTGXDy5EpsclFP62uiw_YN-KQ3FI` | Supabase Anon Key |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_UR6aTGXDy5EpsclFP62uiw_YN-KQ3FI` | (Optional) Alias |
+3. Deploy!
+
 ---
 
 ## 🔮 What's Next? (Roadmap)

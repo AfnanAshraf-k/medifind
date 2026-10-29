@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import NavBar from "@/app/components/NavBar";
 
 export default function HomePage() {
   const router = useRouter();
@@ -97,39 +98,17 @@ export default function HomePage() {
 
   return (
     <div className="bg-background text-on-surface font-body-md">
-      <header className="w-full top-0 sticky z-50 bg-surface/80 glass-header border-b border-outline-variant">
-        <div className="flex justify-between items-center h-16 px-gutter max-w-max-width mx-auto">
-          <div className="text-headline-md font-headline-md text-primary">MediFind</div>
-          <nav className="hidden md:flex items-center gap-xl">
-            <Link className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="/search">
-              Find Medicine
-            </Link>
-            <Link className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="/search?mode=pharmacy">
-              Pharmacies
-            </Link>
-            <Link className="text-on-surface-variant font-label-md hover:text-primary transition-colors" href="/support">
-              Support
-            </Link>
-          </nav>
-          <div className="flex items-center gap-md">
-            <div className="flex items-center gap-sm">
-              <span className="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-surface-variant rounded-full transition-all">
-                notifications
-              </span>
-              <button
-                onClick={handleGetLocation}
-                title="Detect current location"
-                className="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-surface-variant rounded-full transition-all border-none bg-transparent"
-              >
-                location_on
-              </button>
-            </div>
-            <Link href="/login" className="bg-primary text-on-primary px-md py-sm rounded-lg font-label-md hover:opacity-90 active:scale-95 transition-all">
-              Login / Sign Up
-            </Link>
-          </div>
-        </div>
-      </header>
+      <NavBar
+        rightIconSlot={
+          <button
+            onClick={handleGetLocation}
+            title="Detect current location"
+            className="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-variant rounded-full transition-all border-none bg-transparent"
+          >
+            location_on
+          </button>
+        }
+      />
 
       <main>
         <section className="relative min-h-[819px] flex items-center justify-center overflow-hidden px-margin-mobile md:px-margin-desktop">
@@ -324,10 +303,11 @@ export default function HomePage() {
                   </div>
                 </li>
               </ul>
-              <Link href="/login">
-                <button className="bg-surface text-primary border-2 border-primary px-xl py-md rounded-lg font-label-md hover:bg-primary hover:text-on-primary transition-all">
-                  Create User Account
-                </button>
+              <Link
+                href="/login"
+                className="inline-block bg-surface text-primary border-2 border-primary px-xl py-md rounded-lg font-label-md hover:bg-primary hover:text-on-primary transition-all text-center"
+              >
+                Create User Account
               </Link>
             </div>
           </div>
@@ -396,10 +376,11 @@ export default function HomePage() {
               </div>
               <p className="text-on-surface-variant font-body-md">Join 500+ pharmacies joining MediFind this month.</p>
             </div>
-            <Link href="/login?signup=true">
-              <button className="bg-primary text-on-primary px-xl py-md rounded-lg font-label-md whitespace-nowrap shadow-md active:scale-95 transition-all">
-                Become a Partner Pharmacy
-              </button>
+            <Link
+              href="/login?signup=true"
+              className="bg-primary text-on-primary px-xl py-md rounded-lg font-label-md whitespace-nowrap shadow-md active:scale-95 transition-all inline-block text-center"
+            >
+              Become a Partner Pharmacy
             </Link>
           </div>
         </section>
@@ -412,12 +393,12 @@ export default function HomePage() {
             <div className="text-body-sm font-body-sm text-on-surface-variant">© 2026 MediFind Clinical Solutions. All rights reserved.</div>
           </div>
           <div className="flex gap-lg">
-            <a className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="#">
+            <Link className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="/support">
               Privacy Policy
-            </a>
-            <a className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="#">
+            </Link>
+            <Link className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="/support">
               Terms of Service
-            </a>
+            </Link>
             <Link className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="/support">
               Contact Pharmacy Support
             </Link>
