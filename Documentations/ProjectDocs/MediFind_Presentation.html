@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediFind – Project Presentation | Afnan Ashraf K | KMCT ITM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --blue: #1a5fcc;
+      --blue-light: #2d7ff9;
+      --blue-dark: #0f3d8a;
+      --teal: #0ea5e9;
+      --accent: #06b6d4;
+      --white: #ffffff;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0d1117;
+      color: #fff;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    .slides-wrapper { width:100vw; height:100vh; position:relative; }
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 44px 60px;
+      opacity: 0;
+      transform: translateX(60px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .slide.active { opacity:1; transform:translateX(0); pointer-events:all; }
+    .slide.exit   { opacity:0; transform:translateX(-60px); }
+
+    .bg-hero    { background: linear-gradient(135deg, #0a1628 0%, #0f2d5c 40%, #1a4a8a 70%, #0a1628 100%); }
+    .bg-content { background: linear-gradient(160deg, #0f1a2e 0%, #111827 100%); }
+    .bg-alt     { background: linear-gradient(160deg, #0a1628 0%, #0d1f3c 100%); }
+    .bg-dark    { background: linear-gradient(160deg, #06111f 0%, #0d1a2e 100%); }
+
+    .slide-number { position:absolute; bottom:22px; right:28px; font-size:12px; color:rgba(255,255,255,0.28); font-weight:500; letter-spacing:1px; }
+    .slide-logo   { position:absolute; bottom:18px; left:28px; font-size:12px; color:rgba(255,255,255,0.28); font-weight:600; }
+    .slide-logo span { color:#2d7ff9; }
+
+    .section-badge {
+      display:inline-flex; align-items:center; gap:8px;
+      background:rgba(45,127,249,0.15); border:1px solid rgba(45,127,249,0.3);
+      border-radius:100px; padding:5px 14px; font-size:11px; font-weight:700;
+      color:#60a5fa; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:18px;
+    }
+    .slide-title { font-family:'Poppins',sans-serif; font-size:clamp(26px,3.2vw,40px); font-weight:800; line-height:1.15; color:#fff; margin-bottom:6px; }
+    .slide-title .hl { color:#2d7ff9; }
+    .slide-subtitle { font-size:15px; color:rgba(255,255,255,0.5); margin-bottom:28px; }
+    .divider { width:55px; height:4px; background:linear-gradient(90deg,#2d7ff9,#06b6d4); border-radius:4px; margin-bottom:24px; }
+
+    /* SLIDE 1 */
+    #slide-1 { justify-content:center; align-items:center; text-align:center; }
+    .title-logo { width:68px; height:68px; background:linear-gradient(135deg,#2d7ff9,#06b6d4); border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:32px; margin:0 auto 20px; box-shadow:0 0 60px rgba(45,127,249,0.5); }
+    .main-title { font-family:'Poppins',sans-serif; font-size:clamp(40px,6vw,70px); font-weight:900; background:linear-gradient(135deg,#fff 30%,#60a5fa 70%,#06b6d4 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1.05; margin-bottom:10px; }
+    .main-tagline { font-size:clamp(13px,1.6vw,17px); color:rgba(255,255,255,0.6); margin-bottom:36px; max-width:580px; }
+    .student-card { background:rgba(255,255,255,0.05); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:20px 36px; display:inline-block; margin-bottom:18px; }
+    .student-name { font-size:19px; font-weight:700; color:#fff; margin-bottom:3px; }
+    .student-roll { font-size:13px; color:#60a5fa; font-weight:700; letter-spacing:1px; margin-bottom:10px; }
+    .student-meta { font-size:12px; color:rgba(255,255,255,0.45); line-height:1.8; }
+    .badges-row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .badge { background:rgba(45,127,249,0.12); border:1px solid rgba(45,127,249,0.25); border-radius:8px; padding:5px 12px; font-size:11px; font-weight:600; color:#93c5fd; }
+
+    /* LAYOUT */
+    .two-col   { display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+    .three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; flex:1; }
+
+    /* CARDS */
+    .card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:18px 20px; }
+    .card:hover { background:rgba(45,127,249,0.07); border-color:rgba(45,127,249,0.22); }
+    .card-icon { font-size:26px; margin-bottom:8px; display:block; }
+    .card-title { font-size:14px; font-weight:700; color:#e2e8f0; margin-bottom:5px; }
+    .card-text  { font-size:12.5px; color:rgba(255,255,255,0.5); line-height:1.65; }
+
+    .point-list { list-style:none; display:flex; flex-direction:column; gap:10px; }
+    .point-list li { display:flex; align-items:flex-start; gap:10px; font-size:13px; color:rgba(255,255,255,0.72); line-height:1.6; }
+    .point-list li::before { content:''; width:7px; height:7px; background:linear-gradient(135deg,#2d7ff9,#06b6d4); border-radius:50%; flex-shrink:0; margin-top:6px; }
+    .point-list li strong { color:#e2e8f0; }
+
+    .numbered-list { list-style:none; display:flex; flex-direction:column; gap:12px; }
+    .numbered-list li { display:flex; align-items:flex-start; gap:12px; font-size:13px; color:rgba(255,255,255,0.68); line-height:1.6; }
+    .num-badge { min-width:28px; height:28px; background:linear-gradient(135deg,#2d7ff9,#06b6d4); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex-shrink:0; }
+
+    /* TABLE */
+    .doc-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .doc-table th { background:rgba(45,127,249,0.18); color:#93c5fd; padding:9px 12px; text-align:left; font-weight:700; font-size:10.5px; text-transform:uppercase; letter-spacing:.8px; border-bottom:1px solid rgba(45,127,249,0.3); }
+    .doc-table td { padding:8px 12px; color:rgba(255,255,255,0.68); border-bottom:1px solid rgba(255,255,255,0.05); line-height:1.45; }
+    .doc-table tr:hover td { background:rgba(45,127,249,0.05); }
+    .pass-badge { display:inline-block; background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); border-radius:5px; padding:2px 8px; font-size:10.5px; font-weight:700; }
+
+    /* DIAGRAM */
+    .diagram-area { background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; }
+    .dfd-box     { background:rgba(45,127,249,0.12); border:2px solid rgba(45,127,249,0.35); border-radius:10px; padding:10px 18px; text-align:center; font-size:12px; font-weight:600; color:#93c5fd; min-width:120px; }
+    .dfd-process { background:rgba(6,182,212,0.12); border:2px solid rgba(6,182,212,0.35); border-radius:50px; padding:10px 18px; text-align:center; font-size:12px; font-weight:600; color:#67e8f9; min-width:130px; }
+    .dfd-store   { background:rgba(16,185,129,0.1); border:2px solid rgba(16,185,129,0.3); padding:8px 16px; font-size:11px; font-weight:600; color:#6ee7b7; border-left:none; border-right:none; text-align:center; min-width:110px; }
+    .dfd-entity  { background:rgba(245,158,11,0.1); border:2px solid rgba(245,158,11,0.3); border-radius:7px; padding:10px 14px; text-align:center; font-size:11px; font-weight:700; color:#fcd34d; min-width:90px; }
+
+    /* ER */
+    .er-table { background:rgba(255,255,255,0.035); border:1px solid rgba(45,127,249,0.3); border-radius:9px; overflow:hidden; font-size:10.5px; min-width:118px; }
+    .er-table-header { background:rgba(45,127,249,0.22); color:#93c5fd; padding:7px 10px; font-weight:700; font-size:11px; text-align:center; }
+    .er-table-row { padding:4px 10px; color:rgba(255,255,255,0.58); border-top:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; gap:6px; }
+    .er-pk { color:#fcd34d; font-weight:700; font-size:8.5px; }
+    .er-fk { color:#67e8f9; font-size:8.5px; }
+
+    /* SCREENSHOT */
+    .screenshot-frame { border:2px solid rgba(45,127,249,0.25); border-radius:10px; overflow:hidden; box-shadow:0 8px 28px rgba(0,0,0,0.5); }
+    .screenshot-frame img { width:100%; height:100%; object-fit:cover; display:block; }
+    .screen-caption { font-size:11.5px; color:rgba(255,255,255,0.4); text-align:center; margin-top:5px; font-style:italic; }
+
+    /* CODE */
+    .code-block { background:#0d1117; border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px 16px; font-family:'Courier New',monospace; font-size:11px; color:#e2e8f0; line-height:1.65; overflow:hidden; }
+    .code-kw { color:#ff79c6; }
+    .code-fn { color:#50fa7b; }
+    .code-val{ color:#f1fa8c; }
+    .code-cm { color:#6272a4; font-style:italic; }
+    .code-ty { color:#8be9fd; }
+
+    /* TECH */
+    .tech-grid { display:flex; flex-wrap:wrap; gap:8px; }
+    .tech-pill { display:flex; align-items:center; gap:7px; background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:9px 13px; font-size:12px; font-weight:600; color:#e2e8f0; }
+    .tech-icon { font-size:16px; }
+    .tech-why  { font-size:10.5px; color:rgba(255,255,255,0.38); font-weight:400; display:block; margin-top:2px; }
+
+    /* STATUS */
+    .s-pending { background:rgba(245,158,11,0.15); color:#fcd34d; border:1px solid rgba(245,158,11,0.3); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:600; }
+    .s-ready   { background:rgba(6,182,212,0.15); color:#67e8f9; border:1px solid rgba(6,182,212,0.3); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:600; }
+    .s-done    { background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:600; }
+    .s-cancel  { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:600; }
+
+    /* STAT */
+    .stat-box { background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px; text-align:center; }
+    .stat-num { font-size:32px; font-weight:900; background:linear-gradient(135deg,#2d7ff9,#06b6d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .stat-lbl { font-size:11px; color:rgba(255,255,255,0.38); margin-top:3px; }
+
+    .smtext { font-size:12px; color:rgba(255,255,255,0.52); line-height:1.65; }
+
+    /* NAV */
+    .nav-bar { position:fixed; bottom:0; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:14px; padding:12px 22px; background:rgba(10,18,38,0.85); backdrop-filter:blur(16px); border-top:1px solid rgba(255,255,255,0.07); z-index:100; }
+    .nav-btn { background:rgba(45,127,249,0.15); border:1px solid rgba(45,127,249,0.35); border-radius:9px; padding:9px 22px; color:#60a5fa; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; font-family:'Inter',sans-serif; }
+    .nav-btn:hover { background:rgba(45,127,249,0.3); color:#fff; }
+    .nav-btn:disabled { opacity:.3; cursor:not-allowed; }
+    .slide-counter { font-size:13px; color:rgba(255,255,255,0.48); min-width:72px; text-align:center; font-weight:600; }
+    .progress-bar  { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,#2d7ff9,#06b6d4); transition:width .4s ease; z-index:200; }
+    .hint { position:fixed; top:10px; right:14px; font-size:11px; color:rgba(255,255,255,0.22); z-index:100; }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+<div class="hint">← → Arrow keys to navigate · F = Fullscreen</div>
+<div class="slides-wrapper" id="slides">
+
+  <!-- ══ SLIDE 1 — TITLE ══ -->
+  <div class="slide bg-hero active" id="slide-1">
+    <div class="title-logo">💊</div>
+    <div class="main-title">MediFind</div>
+    <p class="main-tagline">A Hyperlocal Medicine Availability Finder &amp; Digital Prescription Platform</p>
+    <div class="student-card">
+      <div class="student-name">AFNAN ASHRAF K</div>
+      <div class="student-roll">KTU Reg. No: KITM25MCA-2004</div>
+      <div class="student-meta">
+        Department of Computer Applications<br/>
+        KMCT Institute of Technology and Management<br/>
+        Kuttippuram, Malappuram, Kerala – 679571<br/><br/>
+        Under the guidance of <strong style="color:#93c5fd">Asst. Prof. Mydhili Manoj</strong><br/>
+        HOD: <strong style="color:#93c5fd">Asst. Prof. Jaseedha P P</strong>
+      </div>
+    </div>
+    <div class="badges-row">
+      <span class="badge">🎓 MCA – Course Code: 20MCA245</span>
+      <span class="badge">📅 Academic Year 2025 – 2027</span>
+      <span class="badge">🗓️ October 2026</span>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">01 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 2 — INTRODUCTION ══ -->
+  <div class="slide bg-content" id="slide-2">
+    <div class="section-badge">📖 Introduction</div>
+    <div class="slide-title">What is <span class="hl">MediFind</span>?</div>
+    <div class="divider"></div>
+    <div class="two-col" style="align-items:start;">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="card">
+          <span class="card-icon">🌐</span>
+          <div class="card-title">Domain</div>
+          <div class="card-text">Healthcare Technology — Hyperlocal digital pharmacy directory connecting patients with nearby medicine stock in real time.</div>
+        </div>
+        <div class="card">
+          <span class="card-icon">💡</span>
+          <div class="card-title">Core Idea</div>
+          <div class="card-text">Search medicine by brand or generic name → see which nearby pharmacies have it in stock → reserve it online &amp; upload your prescription.</div>
+        </div>
+        <div class="card">
+          <span class="card-icon">📍</span>
+          <div class="card-title">Where it is Used</div>
+          <div class="card-text">Primarily targeting <strong>Perinthalmanna &amp; Valanchery</strong> in Malappuram district, Kerala — easily scalable statewide.</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card" style="border-color:rgba(6,182,212,0.3);">
+          <div class="card-title" style="color:#67e8f9;">🔑 Key Actors</div>
+          <ul class="point-list" style="margin-top:8px;">
+            <li><strong>Patients / Users</strong> – Search medicines, make reservations, upload prescriptions</li>
+            <li><strong>Pharmacy Owners</strong> – Manage live inventory, verify prescriptions, fulfil orders</li>
+            <li><strong>Administrators</strong> – Oversee platform data and pharmacy registrations</li>
+          </ul>
+        </div>
+        <div class="card" style="border-color:rgba(16,185,129,0.3);">
+          <div class="card-title" style="color:#34d399;">🚀 Why It Matters</div>
+          <div class="card-text">During medical emergencies, every minute counts. MediFind eliminates the need to physically visit multiple pharmacies or make dozens of calls — replacing hours of search with a 30-second digital query.</div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">02 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 3 — OBJECTIVES ══ -->
+  <div class="slide bg-alt" id="slide-3">
+    <div class="section-badge">🎯 Objectives</div>
+    <div class="slide-title">Project <span class="hl">Objectives</span></div>
+    <div class="divider"></div>
+    <ol class="numbered-list">
+      <li><span class="num-badge">01</span><div><strong style="color:#e2e8f0;">Real-Time Medicine Search</strong><br/><span class="smtext">Enable instant full-text search across brand names (Dolo 650, Augmentin) and generic names (Paracetamol, Amoxicillin) across all registered pharmacies simultaneously.</span></div></li>
+      <li><span class="num-badge">02</span><div><strong style="color:#e2e8f0;">GPS-Based Proximity Sorting</strong><br/><span class="smtext">Compute real-time distances to pharmacies using the Haversine spherical formula and present results sorted by closest proximity automatically.</span></div></li>
+      <li><span class="num-badge">03</span><div><strong style="color:#e2e8f0;">Online Medicine Reservation System</strong><br/><span class="smtext">Allow patients to reserve specific medicine quantities from pharmacies, preventing stock exhaustion before they physically travel to the store.</span></div></li>
+      <li><span class="num-badge">04</span><div><strong style="color:#e2e8f0;">Digital Prescription Upload &amp; Verification</strong><br/><span class="smtext">Enable patients to attach doctor prescriptions (PDF / PNG / JPG) to reservations; pharmacy owners verify via high-resolution modal before dispensing.</span></div></li>
+      <li><span class="num-badge">05</span><div><strong style="color:#e2e8f0;">Automated Inventory Control via DB Triggers</strong><br/><span class="smtext">Implement PostgreSQL trigger-based automatic stock decrement when an order is marked "Collected", ensuring inventory accuracy without manual intervention.</span></div></li>
+    </ol>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">03 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 4 — PROBLEM STATEMENT ══ -->
+  <div class="slide bg-content" id="slide-4">
+    <div class="section-badge">⚠️ Problem Statement</div>
+    <div class="slide-title">The <span class="hl">Problem</span> We Are Solving</div>
+    <div class="divider"></div>
+    <div class="two-col">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card" style="border-color:rgba(239,68,68,0.3);">
+          <span class="card-icon">❌</span>
+          <div class="card-title" style="color:#f87171;">Existing Problems</div>
+          <ul class="point-list">
+            <li><strong>Time-Wasting Physical Visits:</strong> Patients visit multiple shops during emergencies with no availability guarantee</li>
+            <li><strong>National Apps Too Slow:</strong> Tata 1mg, PharmEasy deliver in 24–48 hours — useless for emergencies</li>
+            <li><strong>Prescription Rejection at Counter:</strong> Issues discovered only after waiting in queue</li>
+            <li><strong>No Digital Tools for Chemists:</strong> Local pharmacies cannot announce live stock to their community</li>
+          </ul>
+        </div>
+        <div class="card" style="border-color:rgba(245,158,11,0.3);">
+          <span class="card-icon">👥</span>
+          <div class="card-title" style="color:#fcd34d;">Who Faces This?</div>
+          <div class="card-text">Patients and caregivers in Perinthalmanna &amp; Valanchery — semi-urban towns in Malappuram, Kerala — particularly during acute medical emergencies.</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card" style="border-color:rgba(16,185,129,0.3);">
+          <span class="card-icon">✅</span>
+          <div class="card-title" style="color:#34d399;">How MediFind Solves It</div>
+          <ul class="point-list">
+            <li><strong>Instant Search:</strong> One search replaces hours of calls and visits</li>
+            <li><strong>Live Stock Status:</strong> Pharmacists update inventory in real time</li>
+            <li><strong>Online Reservation:</strong> Reserve before you travel — stock is held for you</li>
+            <li><strong>Digital Prescription:</strong> Upload and verify document before arriving at counter</li>
+            <li><strong>Free for Pharmacies:</strong> Zero commission — any local chemist can join</li>
+          </ul>
+        </div>
+        <div class="card" style="background:rgba(45,127,249,0.07);border-color:rgba(45,127,249,0.2);">
+          <div class="card-text"><strong style="color:#93c5fd;">Key Insight: </strong>Traditional e-commerce pharmacy apps focus on <em>warehouse-to-doorstep delivery</em>. MediFind focuses on <em>hyperlocal counter-pickup within minutes</em> — a completely different use case ignored by existing solutions.</div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">04 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 5 — SCOPE ══ -->
+  <div class="slide bg-dark" id="slide-5">
+    <div class="section-badge">🗺️ Scope</div>
+    <div class="slide-title">Scope of the <span class="hl">Project</span></div>
+    <div class="divider"></div>
+    <div class="two-col">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card">
+          <div class="card-title">👤 Intended Users</div>
+          <ul class="point-list" style="margin-top:6px;">
+            <li>Patients and caregivers seeking medicines urgently</li>
+            <li>Local pharmacy owners and staff managing inventory</li>
+            <li>Platform administrators maintaining data quality</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title">⚙️ Major Features Covered</div>
+          <ul class="point-list" style="margin-top:6px;">
+            <li>Full-text medicine search (brand + generic)</li>
+            <li>Haversine GPS proximity sorting + Map pins</li>
+            <li>Online medicine reservation system</li>
+            <li>Digital prescription upload (PDF/PNG/JPG)</li>
+            <li>Pharmacy inventory CRUD management</li>
+            <li>Real-time PostgreSQL change replication</li>
+            <li>Role-based authentication (User / Pharmacy / Admin)</li>
+          </ul>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card">
+          <div class="card-title">📍 Application Areas</div>
+          <ul class="point-list" style="margin-top:6px;">
+            <li>Perinthalmanna – the hospital city of Malappuram</li>
+            <li>Valanchery, Kuttippuram, Kottakkal, Tirur</li>
+            <li>Expandable to any municipality statewide</li>
+          </ul>
+        </div>
+        <div class="card" style="border-color:rgba(239,68,68,0.22);">
+          <div class="card-title" style="color:#f87171;">❌ Outside Current Scope</div>
+          <ul class="point-list" style="margin-top:6px;">
+            <li>Home delivery / courier integration</li>
+            <li>Online payment gateway</li>
+            <li>AI-based medicine recommendations</li>
+            <li>WhatsApp / SMS automated notifications</li>
+            <li>Full Admin dashboard UI (planned for v2)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">05 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 6 — TECHNOLOGIES ══ -->
+  <div class="slide bg-content" id="slide-6">
+    <div class="section-badge">🛠️ Technologies Used</div>
+    <div class="slide-title">Tech Stack &amp; <span class="hl">Tools</span></div>
+    <div class="divider"></div>
+    <div class="two-col" style="align-items:start;">
+      <div>
+        <p class="smtext" style="margin-bottom:12px;"><strong style="color:#e2e8f0;">Frontend &amp; Framework</strong></p>
+        <div class="tech-grid">
+          <div class="tech-pill"><span class="tech-icon">⚛️</span><div><span>Next.js 14 (App Router)</span><span class="tech-why">SSR + React Server Components</span></div></div>
+          <div class="tech-pill"><span class="tech-icon">🔷</span><div><span>React 18 + TypeScript</span><span class="tech-why">Type-safe component UI</span></div></div>
+          <div class="tech-pill"><span class="tech-icon">🎨</span><div><span>Tailwind CSS</span><span class="tech-why">Utility-first rapid styling</span></div></div>
+          <div class="tech-pill"><span class="tech-icon">🔣</span><div><span>Material Symbols</span><span class="tech-why">Consistent icon system</span></div></div>
+        </div>
+        <p class="smtext" style="margin:16px 0 10px;"><strong style="color:#e2e8f0;">Backend &amp; Database</strong></p>
+        <div class="tech-grid">
+          <div class="tech-pill"><span class="tech-icon">🗄️</span><div><span>Supabase (PostgreSQL 15)</span><span class="tech-why">Cloud RDBMS with RLS &amp; Realtime</span></div></div>
+          <div class="tech-pill"><span class="tech-icon">🔐</span><div><span>Supabase Auth (SSR)</span><span class="tech-why">Cookie-based auth with roles</span></div></div>
+          <div class="tech-pill"><span class="tech-icon">📁</span><div><span>Supabase Storage</span><span class="tech-why">Prescription file bucket</span></div></div>
+        </div>
+      </div>
+      <div>
+        <p class="smtext" style="margin-bottom:12px;"><strong style="color:#e2e8f0;">Algorithms &amp; DevOps</strong></p>
+        <div class="tech-grid">
+          <div class="tech-pill"><span class="tech-icon">📐</span><div><span>Haversine Formula</span><span class="tech-why">GPS distance calculation</span></div></div>
+          <div class="tech-pill"><span class="tech-icon">⚡</span><div><span>PostgreSQL Triggers</span><span class="tech-why">Auto stock decrement</span></div></div>
+          <div class="tech-pill"><span class="tech-icon">🚀</span><div><span>Vercel Hosting</span><span class="tech-why">Serverless edge deployments</span></div></div>
+          <div class="tech-pill"><span class="tech-icon">🐙</span><div><span>GitHub (Git)</span><span class="tech-why">Version control &amp; CI/CD</span></div></div>
+        </div>
+        <p class="smtext" style="margin:16px 0 10px;"><strong style="color:#e2e8f0;">Hardware Requirements</strong></p>
+        <div class="card">
+          <div class="card-text">
+            <strong style="color:#e2e8f0;">Client:</strong> Any smartphone, tablet, laptop or PC with a modern browser (Chrome, Firefox, Safari, Edge) and GPS sensor.<br/><br/>
+            <strong style="color:#e2e8f0;">Dev Environment:</strong> Node.js v18/20 LTS · Windows / macOS / Linux<br/>
+            <strong style="color:#e2e8f0;">Server:</strong> Supabase Cloud (PostgreSQL 15) — no dedicated server required.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">06 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 7 — DFD ══ -->
+  <div class="slide bg-alt" id="slide-7">
+    <div class="section-badge">📊 Data Flow Diagram</div>
+    <div class="slide-title">DFD — <span class="hl">Level 0 &amp; Level 1</span></div>
+    <div class="divider"></div>
+    <div class="two-col" style="align-items:start;gap:24px;">
+      <div>
+        <p class="smtext" style="margin-bottom:12px;font-weight:700;color:#93c5fd;">Level 0 — Context Diagram</p>
+        <div class="diagram-area" style="padding:18px;gap:8px;flex-direction:column;align-items:center;">
+          <div style="display:flex;gap:14px;align-items:center;justify-content:space-between;width:100%;">
+            <div class="dfd-entity">👤<br/>Patient</div>
+            <div class="dfd-entity">🏪<br/>Pharmacy</div>
+            <div class="dfd-entity">👑<br/>Admin</div>
+          </div>
+          <div style="display:flex;gap:44px;font-size:20px;color:rgba(255,255,255,0.28);">↓ ↓ ↓</div>
+          <div class="dfd-process" style="width:200px;padding:14px 18px;text-align:center;">
+            🏥 <strong>MediFind System</strong><br/><span style="font-size:9px;opacity:.6;">Central Processing</span>
+          </div>
+          <div style="display:flex;gap:44px;font-size:20px;color:rgba(255,255,255,0.28);">↓ ↓ ↓</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+            <div class="dfd-store">D1: Profiles</div>
+            <div class="dfd-store">D2: Medicines</div>
+            <div class="dfd-store">D3: Stock</div>
+            <div class="dfd-store">D4: Reservations</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="smtext" style="margin-bottom:12px;font-weight:700;color:#93c5fd;">Level 1 — Main Processes</p>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="dfd-entity" style="min-width:70px;font-size:10px;">Patient</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-process" style="font-size:10px;padding:7px 10px;flex:1;">P1: Search &amp; Filter Medicines</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-store" style="font-size:10px;padding:7px;">D3: Stock</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="dfd-entity" style="min-width:70px;font-size:10px;">Patient</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-process" style="font-size:10px;padding:7px 10px;flex:1;">P2: Reserve Medicine + Upload Rx</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-store" style="font-size:10px;padding:7px;">D4: Orders</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="dfd-entity" style="min-width:70px;font-size:10px;">Pharmacy</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-process" style="font-size:10px;padding:7px 10px;flex:1;">P3: Manage Inventory CRUD</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-store" style="font-size:10px;padding:7px;">D3: Stock</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="dfd-entity" style="min-width:70px;font-size:10px;">Pharmacy</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-process" style="font-size:10px;padding:7px 10px;flex:1;">P4: Verify Rx and Fulfil Order</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-store" style="font-size:10px;padding:7px;">D4: Orders</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="dfd-entity" style="min-width:70px;font-size:10px;">System</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-process" style="font-size:10px;padding:7px 10px;flex:1;">P5: Auth and Route Guard (RBAC)</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-store" style="font-size:10px;padding:7px;">D1: Users</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="dfd-entity" style="min-width:70px;font-size:10px;">DB Trigger</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-process" style="font-size:10px;padding:7px 10px;flex:1;">P6: Auto Stock Decrement on Collect</div>
+            <span style="color:rgba(255,255,255,0.25);">→</span>
+            <div class="dfd-store" style="font-size:10px;padding:7px;">D3: Stock</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">07 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 8 — ER DIAGRAM ══ -->
+  <div class="slide bg-content" id="slide-8">
+    <div class="section-badge">🗂️ ER Diagram</div>
+    <div class="slide-title">Entity Relationship <span class="hl">Diagram</span></div>
+    <div class="divider"></div>
+    <div style="display:flex;gap:12px;align-items:center;flex:1;overflow:hidden;">
+      <div class="er-table" style="min-width:110px;">
+        <div class="er-table-header">profiles</div>
+        <div class="er-table-row"><span>id</span><span class="er-pk">PK</span></div>
+        <div class="er-table-row"><span>full_name</span></div>
+        <div class="er-table-row"><span>email</span></div>
+        <div class="er-table-row"><span>role</span></div>
+        <div class="er-table-row"><span>created_at</span></div>
+      </div>
+      <div style="text-align:center;flex-shrink:0;"><div style="font-size:9px;color:rgba(255,255,255,0.3);">1:1</div><div style="font-size:16px;color:rgba(255,255,255,0.3);">→</div></div>
+      <div class="er-table" style="min-width:128px;">
+        <div class="er-table-header">pharmacies</div>
+        <div class="er-table-row"><span>id</span><span class="er-pk">PK</span></div>
+        <div class="er-table-row"><span>owner_id</span><span class="er-fk">FK profiles</span></div>
+        <div class="er-table-row"><span>name</span></div>
+        <div class="er-table-row"><span>address</span></div>
+        <div class="er-table-row"><span>lat, lng</span></div>
+        <div class="er-table-row"><span>phone</span></div>
+        <div class="er-table-row"><span>hours</span></div>
+        <div class="er-table-row"><span>is_open</span></div>
+      </div>
+      <div style="text-align:center;flex-shrink:0;"><div style="font-size:9px;color:rgba(255,255,255,0.3);">M:M</div><div style="font-size:16px;color:rgba(255,255,255,0.3);">→</div></div>
+      <div class="er-table" style="min-width:145px;">
+        <div class="er-table-header" style="background:rgba(6,182,212,0.22);color:#67e8f9;">pharmacy_stock</div>
+        <div class="er-table-row"><span>id</span><span class="er-pk">PK</span></div>
+        <div class="er-table-row"><span>pharmacy_id</span><span class="er-fk">FK pharm.</span></div>
+        <div class="er-table-row"><span>medicine_id</span><span class="er-fk">FK medic.</span></div>
+        <div class="er-table-row"><span>quantity</span></div>
+        <div class="er-table-row"><span>price</span></div>
+        <div class="er-table-row"><span>status</span></div>
+        <div class="er-table-row"><span>updated_at</span></div>
+      </div>
+      <div style="text-align:center;flex-shrink:0;"><div style="font-size:9px;color:rgba(255,255,255,0.3);">1:N</div><div style="font-size:16px;color:rgba(255,255,255,0.3);">↔</div></div>
+      <div class="er-table" style="min-width:112px;">
+        <div class="er-table-header" style="background:rgba(16,185,129,0.18);color:#6ee7b7;">medicines</div>
+        <div class="er-table-row"><span>id</span><span class="er-pk">PK</span></div>
+        <div class="er-table-row"><span>name</span></div>
+        <div class="er-table-row"><span>generic_name</span></div>
+        <div class="er-table-row"><span>category</span></div>
+      </div>
+      <div style="text-align:center;flex-shrink:0;"><div style="font-size:9px;color:rgba(255,255,255,0.3);">1:N</div><div style="font-size:16px;color:rgba(255,255,255,0.3);">→</div></div>
+      <div class="er-table" style="min-width:142px;">
+        <div class="er-table-header" style="background:rgba(245,158,11,0.18);color:#fcd34d;">reservations</div>
+        <div class="er-table-row"><span>id</span><span class="er-pk">PK</span></div>
+        <div class="er-table-row"><span>user_id</span><span class="er-fk">FK profiles</span></div>
+        <div class="er-table-row"><span>pharmacy_stock_id</span><span class="er-fk">FK stock</span></div>
+        <div class="er-table-row"><span>quantity</span></div>
+        <div class="er-table-row"><span>status</span></div>
+        <div class="er-table-row"><span>prescription_url</span></div>
+        <div class="er-table-row"><span>created_at</span></div>
+      </div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:16px;flex-wrap:wrap;">
+      <span class="smtext">🔑 <span class="er-pk" style="font-size:11px;">PK</span> = Primary Key</span>
+      <span class="smtext">🔗 <span class="er-fk" style="font-size:11px;">FK</span> = Foreign Key</span>
+      <span class="smtext">Reservation status: <span class="s-pending">pending</span> <span class="s-ready">ready</span> <span class="s-done">collected</span> <span class="s-cancel">cancelled</span></span>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">08 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 9 — MODULES ══ -->
+  <div class="slide bg-dark" id="slide-9">
+    <div class="section-badge">🧩 Module Description</div>
+    <div class="slide-title">System <span class="hl">Modules</span></div>
+    <div class="divider"></div>
+    <div class="three-col">
+      <div class="card" style="border-color:rgba(45,127,249,0.3);">
+        <span class="card-icon">👤</span>
+        <div class="card-title" style="color:#60a5fa;">Module 1: Patient (User)</div>
+        <ul class="point-list" style="margin-top:6px;">
+          <li>Search medicines by brand / generic name</li>
+          <li>GPS proximity filters and radius slider</li>
+          <li>List view / Map view toggle</li>
+          <li>Reserve medicine quantities online</li>
+          <li>Upload prescriptions (PDF/PNG/JPG)</li>
+          <li>Dashboard: track reservation status</li>
+          <li>Download prescription documents</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:rgba(6,182,212,0.3);">
+        <span class="card-icon">🏪</span>
+        <div class="card-title" style="color:#67e8f9;">Module 2: Pharmacy Owner</div>
+        <ul class="point-list" style="margin-top:6px;">
+          <li>Onboarding wizard (coordinates, hours)</li>
+          <li>Inventory CRUD (add, edit, delete)</li>
+          <li>Upload custom product images</li>
+          <li>View and manage patient reservations</li>
+          <li>Prescription verification in high-res modal</li>
+          <li>Mark orders: Ready / Collected / Cancelled</li>
+          <li>Realtime PostgreSQL sync (auto-refresh)</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:rgba(16,185,129,0.3);">
+        <span class="card-icon">🔐</span>
+        <div class="card-title" style="color:#34d399;">Module 3: Auth and System</div>
+        <ul class="point-list" style="margin-top:6px;">
+          <li>Email/Password authentication via Supabase</li>
+          <li>Role-based access: user/pharmacy/admin</li>
+          <li>Next.js middleware route guards</li>
+          <li>Row Level Security (RLS) on all tables</li>
+          <li>Token refresh and cookie-based sessions</li>
+          <li>PostgreSQL triggers for auto stock decrement</li>
+          <li>Full-text search (FTS) index on medicines</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px;background:rgba(45,127,249,0.055);border-color:rgba(45,127,249,0.18);">
+      <div class="card-text"><strong style="color:#93c5fd;">Module Interactions:</strong> Patient Module calls Auth Module for identity verification → queries System DB for search results → submits reservations to Pharmacy Module → Pharmacy Module reads prescriptions from Storage → DB Trigger auto-decrements stock on collection.</div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">09 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 10 — UI DESIGN ══ -->
+  <div class="slide bg-content" id="slide-10">
+    <div class="section-badge">🖥️ User Interface</div>
+    <div class="slide-title">Application <span class="hl">Screens</span></div>
+    <div class="divider"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;flex:1;align-items:start;">
+      <div>
+        <div class="screenshot-frame" style="height:150px;"><img src="Screenshots/loginpage.png" alt="Login Page" style="object-position:top;"/></div>
+        <div class="screen-caption">🔐 Login Page — Email/password auth with role-based routing</div>
+      </div>
+      <div>
+        <div class="screenshot-frame" style="height:150px;"><img src="Screenshots/Find Medicine Page.png" alt="Find Medicine" style="object-position:top;"/></div>
+        <div class="screen-caption">🔍 Find Medicine — GPS filters, stock badges, reserve button</div>
+      </div>
+      <div>
+        <div class="screenshot-frame" style="height:150px;"><img src="Screenshots/Pharmacy Lists.png" alt="Pharmacy List" style="object-position:top;"/></div>
+        <div class="screen-caption">🏪 Pharmacy Directory — Proximity-sorted with map toggle</div>
+      </div>
+      <div>
+        <div class="screenshot-frame" style="height:150px;"><img src="Screenshots/Dashboard.png" alt="Dashboard" style="object-position:top;"/></div>
+        <div class="screen-caption">📊 Pharmacy Dashboard — Live inventory and POS sync</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px;">
+      <div class="stat-box"><div class="stat-num">3</div><div class="stat-lbl">User Roles</div></div>
+      <div class="stat-box"><div class="stat-num">5+</div><div class="stat-lbl">Core Screens</div></div>
+      <div class="stat-box"><div class="stat-num">360px</div><div class="stat-lbl">Min Screen Width</div></div>
+      <div class="stat-box"><div class="stat-num">100%</div><div class="stat-lbl">Mobile Responsive</div></div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">10 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 11 — IMPLEMENTATION ══ -->
+  <div class="slide bg-dark" id="slide-11">
+    <div class="section-badge">⚙️ Implementation</div>
+    <div class="slide-title">Key <span class="hl">Implementation</span> Details</div>
+    <div class="divider"></div>
+    <div class="two-col" style="align-items:start;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <p class="smtext" style="font-weight:700;color:#93c5fd;">Haversine Geolocation Algorithm</p>
+        <div class="code-block">
+<span class="code-kw">export function</span> <span class="code-fn">calculateDistance</span>(<br/>
+&nbsp;&nbsp;lat1: <span class="code-ty">number</span>, lon1: <span class="code-ty">number</span>,<br/>
+&nbsp;&nbsp;lat2: <span class="code-ty">number</span>, lon2: <span class="code-ty">number</span><br/>
+): <span class="code-ty">number</span> {<br/>
+&nbsp;&nbsp;<span class="code-kw">const</span> R = <span class="code-val">6371</span>; <span class="code-cm">// Earth radius in km</span><br/>
+&nbsp;&nbsp;<span class="code-kw">const</span> dLat = (lat2-lat1) * (Math.PI/<span class="code-val">180</span>);<br/>
+&nbsp;&nbsp;<span class="code-kw">const</span> a = Math.<span class="code-fn">sin</span>(dLat/<span class="code-val">2</span>)**<span class="code-val">2</span> +<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;Math.<span class="code-fn">cos</span>(lat1*0.01745) * Math.<span class="code-fn">cos</span>(lat2*0.01745)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;* Math.<span class="code-fn">sin</span>(dLon/<span class="code-val">2</span>)**<span class="code-val">2</span>;<br/>
+&nbsp;&nbsp;<span class="code-kw">return</span> <span class="code-fn">parseFloat</span>((R * 2*<span class="code-fn">atan2</span>(√a, √(1-a))).toFixed(<span class="code-val">1</span>));<br/>
+}
+        </div>
+        <p class="smtext" style="font-weight:700;color:#93c5fd;">PostgreSQL Auto-Decrement Trigger</p>
+        <div class="code-block">
+<span class="code-kw">CREATE OR REPLACE FUNCTION</span><br/>
+&nbsp;&nbsp;<span class="code-fn">decrement_stock_on_collection</span>()<br/>
+<span class="code-kw">RETURNS</span> trigger <span class="code-kw">AS</span> $$<br/>
+<span class="code-kw">BEGIN</span><br/>
+&nbsp;&nbsp;<span class="code-kw">IF</span> new.status = <span class="code-val">'collected'</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-kw">AND</span> old.status != <span class="code-val">'collected'</span> <span class="code-kw">THEN</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-kw">UPDATE</span> pharmacy_stock<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-kw">SET</span> quantity = GREATEST(0, quantity - new.quantity)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-kw">WHERE</span> id = new.pharmacy_stock_id;<br/>
+&nbsp;&nbsp;<span class="code-kw">END IF</span>; RETURN new;<br/>
+<span class="code-kw">END</span>; $$ <span class="code-kw">LANGUAGE</span> plpgsql;
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <p class="smtext" style="font-weight:700;color:#93c5fd;">3-Tier Architecture</p>
+        <div class="card" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="background:rgba(45,127,249,0.18);border-radius:7px;padding:7px 12px;font-size:11px;font-weight:700;color:#60a5fa;min-width:90px;text-align:center;">Presentation</div>
+            <div class="card-text">Next.js Pages, React Components, Tailwind CSS</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="background:rgba(6,182,212,0.18);border-radius:7px;padding:7px 12px;font-size:11px;font-weight:700;color:#67e8f9;min-width:90px;text-align:center;">Application</div>
+            <div class="card-text">Route Middleware, Haversine Engine, Supabase SSR Client</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="background:rgba(16,185,129,0.18);border-radius:7px;padding:7px 12px;font-size:11px;font-weight:700;color:#34d399;min-width:90px;text-align:center;">Data</div>
+            <div class="card-text">PostgreSQL 15, Supabase Storage, DB Triggers, RLS Policies</div>
+          </div>
+        </div>
+        <p class="smtext" style="font-weight:700;color:#93c5fd;">Agile Sprint Summary</p>
+        <div class="card">
+          <ul class="point-list">
+            <li><strong>Sprint 0:</strong> Requirements, setup, DB schema design</li>
+            <li><strong>Sprint 1:</strong> Auth, Route guards, Live database search</li>
+            <li><strong>Sprint 2:</strong> Haversine GPS, Map pins, Town snapping</li>
+            <li><strong>Sprint 3:</strong> Reservation system, Inventory CRUD, Triggers</li>
+            <li><strong>Sprint 4:</strong> Prescription upload, Verification modal</li>
+            <li><strong>Sprint 5:</strong> Testing, Deployment, Documentation</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">11 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 12 — TESTING ══ -->
+  <div class="slide bg-content" id="slide-12">
+    <div class="section-badge">🧪 Testing</div>
+    <div class="slide-title">Testing &amp; <span class="hl">Quality Assurance</span></div>
+    <div class="divider"></div>
+    <div style="display:flex;gap:16px;margin-bottom:12px;">
+      <div class="card" style="flex:1;padding:12px;"><div class="card-title">Unit Testing</div><div class="card-text">Haversine edge cases, boundary GPS coords, enum stock status transitions</div></div>
+      <div class="card" style="flex:1;padding:12px;"><div class="card-title">Integration Testing</div><div class="card-text">Supabase SSR cookie sessions, route middleware RBAC, PostgreSQL trigger execution</div></div>
+      <div class="card" style="flex:1;padding:12px;"><div class="card-title">UAT</div><div class="card-text">Live testing on mobile devices in Perinthalmanna and Valanchery — real 4G network conditions</div></div>
+    </div>
+    <div style="flex:1;overflow:auto;">
+      <table class="doc-table">
+        <thead>
+          <tr><th>Test ID</th><th>Module</th><th>Input / Action</th><th>Expected Result</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>TC-01</td><td>Search</td><td>Enter "Paracetamol"</td><td>Lists pharmacies stocking it</td><td><span class="pass-badge">PASS</span></td></tr>
+          <tr><td>TC-02</td><td>Proximity</td><td>Select "Perinthalmanna" town</td><td>Pharmacies re-sort by distance</td><td><span class="pass-badge">PASS</span></td></tr>
+          <tr><td>TC-03</td><td>Map View</td><td>Switch to Map View</td><td>Pins render on coordinates</td><td><span class="pass-badge">PASS</span></td></tr>
+          <tr><td>TC-04</td><td>Upload</td><td>Upload 2MB prescription PDF</td><td>Stored in bucket; preview shown</td><td><span class="pass-badge">PASS</span></td></tr>
+          <tr><td>TC-05</td><td>Reservation</td><td>Reserve 2 units</td><td>Status set to 'pending'</td><td><span class="pass-badge">PASS</span></td></tr>
+          <tr><td>TC-06</td><td>Chemist</td><td>Click "Review Prescription"</td><td>High-res modal opens</td><td><span class="pass-badge">PASS</span></td></tr>
+          <tr><td>TC-07</td><td>Sync</td><td>Mark order "Ready for Pickup"</td><td>Patient badge updates in real time</td><td><span class="pass-badge">PASS</span></td></tr>
+          <tr><td>TC-08</td><td>Trigger</td><td>Mark order "Collected"</td><td>Stock auto-decrements by 2</td><td><span class="pass-badge">PASS</span></td></tr>
+          <tr><td>TC-09</td><td>Auth</td><td>Unauthenticated access /dashboard</td><td>Redirect to /login</td><td><span class="pass-badge">PASS</span></td></tr>
+          <tr><td>TC-10</td><td>Inventory</td><td>Pharmacist updates item price</td><td>Search reflects new price instantly</td><td><span class="pass-badge">PASS</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">12 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 13 — RESULTS ══ -->
+  <div class="slide bg-dark" id="slide-13">
+    <div class="section-badge">📈 Results</div>
+    <div class="slide-title">Results &amp; <span class="hl">Outputs</span></div>
+    <div class="divider"></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;flex:1;align-items:start;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="screenshot-frame" style="height:120px;"><img src="Screenshots/Find Medicine Page.png" alt="Results" style="object-position:top;height:100%;width:100%;object-fit:cover;"/></div>
+          <div class="screenshot-frame" style="height:120px;"><img src="Screenshots/Dashboard.png" alt="Dashboard" style="object-position:top;height:100%;width:100%;object-fit:cover;"/></div>
+        </div>
+        <div class="screen-caption">Left: Medicine search sorted by proximity — Right: Real-time pharmacy inventory dashboard</div>
+        <div class="card">
+          <div class="card-title">Objectives Achieved</div>
+          <ul class="point-list" style="margin-top:6px;">
+            <li><strong>GPS proximity search</strong> working across all 6 Malappuram towns using Haversine</li>
+            <li><strong>Medicine reservation</strong> creates pending orders with prescription attachments</li>
+            <li><strong>Real-time stock sync</strong> via Supabase replication — updates visible in under 1 second</li>
+            <li><strong>Automatic stock decrement</strong> trigger fires correctly on every Collected status change</li>
+          </ul>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="stat-box"><div class="stat-num">10/10</div><div class="stat-lbl">Test Cases Passed</div></div>
+        <div class="stat-box"><div class="stat-num">&lt;200ms</div><div class="stat-lbl">Search Response</div></div>
+        <div class="stat-box"><div class="stat-num">&lt;1s</div><div class="stat-lbl">Realtime Sync</div></div>
+        <div class="stat-box"><div class="stat-num">5</div><div class="stat-lbl">Sprints Done</div></div>
+        <div class="stat-box"><div class="stat-num">99.9%</div><div class="stat-lbl">Supabase Uptime</div></div>
+      </div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">13 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 14 — ADVANTAGES ══ -->
+  <div class="slide bg-content" id="slide-14">
+    <div class="section-badge">✨ Advantages</div>
+    <div class="slide-title">Advantages &amp; <span class="hl">Applications</span></div>
+    <div class="divider"></div>
+    <div class="two-col">
+      <div>
+        <p class="smtext" style="font-weight:700;color:#93c5fd;margin-bottom:10px;">Key Advantages</p>
+        <ul class="point-list">
+          <li><strong>Emergency-Ready:</strong> Reduces medicine search from hours to under 30 seconds</li>
+          <li><strong>Zero Commissions:</strong> Free for local pharmacies — no subscription or listing fee</li>
+          <li><strong>Regulatory Compliance:</strong> Prescription verification before dispensing prevents unauthorized sales</li>
+          <li><strong>Live Accuracy:</strong> Real-time inventory prevents wasted trips to pharmacies with zero stock</li>
+          <li><strong>Haversine Precision:</strong> Accurate distance calculation without expensive Maps API billing</li>
+          <li><strong>Scalable Architecture:</strong> Cloud-native Supabase backend scales automatically on demand</li>
+          <li><strong>Mobile-First Design:</strong> Fully responsive — works on any smartphone browser without app install</li>
+          <li><strong>Trigger Automation:</strong> Stock decrements automatically — zero manual accounting errors</li>
+        </ul>
+      </div>
+      <div>
+        <p class="smtext" style="font-weight:700;color:#93c5fd;margin-bottom:10px;">Real-World Applications</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="card" style="padding:12px;">
+            <div class="card-title">🏥 Hospital Towns</div>
+            <div class="card-text">Perinthalmanna — hospital city of Malappuram — where specialized prescriptions are frequent and urgent</div>
+          </div>
+          <div class="card" style="padding:12px;">
+            <div class="card-title">🚨 Emergency Situations</div>
+            <div class="card-text">Night-time medicine emergencies where calling individual pharmacies is impractical</div>
+          </div>
+          <div class="card" style="padding:12px;">
+            <div class="card-title">👴 Senior Citizens</div>
+            <div class="card-text">Elderly patients who cannot travel easily to search multiple pharmacies for chronic disease medicines</div>
+          </div>
+          <div class="card" style="padding:12px;">
+            <div class="card-title">💊 Rare Medicine Search</div>
+            <div class="card-text">Niche pediatric syrups, nebulizer solutions, and surgical supplies stocked only by select pharmacies</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">14 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 15 — LIMITATIONS ══ -->
+  <div class="slide bg-alt" id="slide-15">
+    <div class="section-badge">🔮 Future Scope</div>
+    <div class="slide-title">Limitations &amp; <span class="hl">Future Enhancements</span></div>
+    <div class="divider"></div>
+    <div class="two-col">
+      <div>
+        <p class="smtext" style="font-weight:700;color:#f87171;margin-bottom:10px;">Current Limitations</p>
+        <ul class="point-list">
+          <li><strong>No Home Delivery:</strong> Counter-pickup only — no delivery integration yet</li>
+          <li><strong>No Online Payment:</strong> Payment gateway (Razorpay / UPI) not yet implemented</li>
+          <li><strong>Admin Dashboard Incomplete:</strong> Admin UI is still in backlog for v2</li>
+          <li><strong>Manual Pharmacy Onboarding:</strong> No automated licensing verification system</li>
+          <li><strong>GPS Accuracy Dependency:</strong> Browser GPS can be inaccurate indoors</li>
+          <li><strong>No Push Notifications:</strong> Patients must manually check dashboard for status updates</li>
+          <li><strong>Geographic Scope:</strong> Currently focused on Malappuram district</li>
+        </ul>
+      </div>
+      <div>
+        <p class="smtext" style="font-weight:700;color:#34d399;margin-bottom:10px;">Planned Future Enhancements</p>
+        <ol class="numbered-list">
+          <li><span class="num-badge">01</span><div><strong style="color:#e2e8f0;">AI Medicine Recommendations</strong><br/><span class="smtext">NLP model to suggest verified generic substitutes when branded medicines are out of stock</span></div></li>
+          <li><span class="num-badge">02</span><div><strong style="color:#e2e8f0;">Integrated Digital Payments</strong><br/><span class="smtext">Razorpay / UPI advance payment before counter pickup</span></div></li>
+          <li><span class="num-badge">03</span><div><strong style="color:#e2e8f0;">Hyperlocal Home Delivery</strong><br/><span class="smtext">Partnership with local couriers for 30-minute emergency delivery</span></div></li>
+          <li><span class="num-badge">04</span><div><strong style="color:#e2e8f0;">WhatsApp / SMS Notifications</strong><br/><span class="smtext">Automatic alerts when prescription is verified and medicine is ready</span></div></li>
+          <li><span class="num-badge">05</span><div><strong style="color:#e2e8f0;">Mobile App (React Native)</strong><br/><span class="smtext">Native iOS/Android app with background push notifications</span></div></li>
+        </ol>
+      </div>
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">15 / 16</div>
+  </div>
+
+  <!-- ══ SLIDE 16 — CONCLUSION ══ -->
+  <div class="slide bg-hero" id="slide-16" style="justify-content:center;align-items:center;text-align:center;">
+    <div class="section-badge" style="margin:0 auto 18px;">🎓 Conclusion</div>
+    <div class="slide-title" style="font-size:clamp(30px,4vw,50px);max-width:700px;margin:0 auto 10px;">MediFind — <span class="hl">Mission Accomplished</span></div>
+    <p class="slide-subtitle" style="max-width:640px;margin:0 auto 24px;">A complete full-stack hyperlocal medicine availability finder built, tested and deployed using Next.js 14, Supabase PostgreSQL, and the Haversine geospatial algorithm.</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:720px;margin:0 auto 20px;">
+      <div class="stat-box"><div class="stat-num">5</div><div class="stat-lbl">Core Modules Built</div></div>
+      <div class="stat-box"><div class="stat-num">10/10</div><div class="stat-lbl">Test Cases Passed</div></div>
+      <div class="stat-box"><div class="stat-num">14 Wks</div><div class="stat-lbl">Agile Development</div></div>
+    </div>
+    <div class="card" style="max-width:640px;margin:0 auto;text-align:left;border-color:rgba(45,127,249,0.3);">
+      <ul class="point-list">
+        <li><strong>Problem Solved:</strong> Emergency medicine search reduced from hours to under 30 seconds</li>
+        <li><strong>Technology:</strong> Next.js 14 + Supabase PostgreSQL + Haversine Algorithm</li>
+        <li><strong>Impact:</strong> Empowers local Malappuram pharmacies with free digital inventory tools</li>
+        <li><strong>Compliance:</strong> Fully aligned with KTU 20MCA245 Mini Project requirements</li>
+      </ul>
+    </div>
+    <div style="margin-top:20px;font-size:13px;color:rgba(255,255,255,0.36);">
+      <strong style="color:#60a5fa;">AFNAN ASHRAF K</strong> &nbsp;·&nbsp; KITM25MCA-2004 &nbsp;·&nbsp; Department of Computer Applications<br/>
+      KMCT Institute of Technology and Management, Kuttippuram &nbsp;·&nbsp; October 2026
+    </div>
+    <div class="slide-logo"><span>🏥</span> MediFind</div>
+    <div class="slide-number">16 / 16</div>
+  </div>
+
+</div>
+
+<!-- NAVIGATION -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)" disabled>&#8592; Previous</button>
+  <span class="slide-counter" id="counter">1 / 16</span>
+  <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">Next &#8594;</button>
+</div>
+
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+
+  function changeSlide(dir) {
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => slides[current].classList.remove('exit'), 450);
+    current = Math.max(0, Math.min(total - 1, current + dir));
+    slides[current].classList.add('active');
+    document.getElementById('counter').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === total - 1;
+    document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeSlide(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   changeSlide(-1);
+    if (e.key === 'f' || e.key === 'F') document.documentElement.requestFullscreen?.();
+  });
+
+  document.getElementById('progress').style.width = (1 / total * 100) + '%';
+</script>
+</body>
+</html>

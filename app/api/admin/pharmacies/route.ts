@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthenticatedAdmin, recordAuditLog, createNotification } from "@/lib/admin";
+import { getAuthenticatedAdmin, recordAuditLog, createNotification, getServiceRoleClient } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -75,21 +75,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing required fields: action and pharmacyId are required." }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const serviceClient = getServiceRoleClient();
+  const userClient = createClient();
+  const clientToUse = serviceClient || userClient;
 
   // Find pharmacy
-  const { data: pharmacy, error: findError } = await supabase
+  const { data: pharmacy, error: findError } = await clientToUse
     .from("pharmacies")
     .select("id, name, owner_id, status, is_suspended, license_number")
     .eq("id", pharmacyId)
-    .single();
+    .maybeSingle();
 
   if (findError || !pharmacy) {
     return NextResponse.json({ error: "Pharmacy not found." }, { status: 404 });
   }
 
   if (action === "approve") {
-    const { error } = await supabase
+    const { error } = await clientToUse
       .from("pharmacies")
       .update({
         status: "approved",
@@ -101,11 +103,10 @@ export async function POST(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Notify pharmacy owner
     await createNotification({
       userId: pharmacy.owner_id,
-      title: "Pharmacy Approved!",
-      message: `Congratulations! Your pharmacy "${pharmacy.name}" has been approved by administrators. You can now log in and manage your medicine listings.`,
+      title: "Pharmacy Registration Approved!",
+      message: `Congratulations! Your pharmacy "${pharmacy.name}" has been approved. You can now manage your live inventory catalog and receive patient reservations.`,
       type: "approval",
       metadata: { pharmacy_id: pharmacyId },
     });
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
       action: "approve_pharmacy",
       targetType: "pharmacy",
       targetId: pharmacyId,
-      details: { pharmacy_name: pharmacy.name, owner_id: pharmacy.owner_id },
+      details: { pharmacy_name: pharmacy.name, owner_id: pharmacy.owner_id, license_number: pharmacy.license_number },
       req: request,
     });
 
@@ -124,9 +125,9 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === "reject") {
-    const rejectionReason = reason?.trim() || "Information could not be verified by platform administrators.";
+    const rejectionReason = reason?.trim() || "License credentials or location could not be verified.";
 
-    const { error } = await supabase
+    const { error } = await clientToUse
       .from("pharmacies")
       .update({
         status: "rejected",
@@ -136,11 +137,10 @@ export async function POST(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Notify pharmacy owner
     await createNotification({
       userId: pharmacy.owner_id,
-      title: "Pharmacy Registration Rejected",
-      message: `Your registration request for "${pharmacy.name}" was not approved. Reason: ${rejectionReason}`,
+      title: "Pharmacy Registration Needs Revision",
+      message: `Your pharmacy registration for "${pharmacy.name}" was not approved. Reason: ${rejectionReason}`,
       type: "rejection",
       metadata: { pharmacy_id: pharmacyId, reason: rejectionReason },
     });
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === "suspend") {
-    const { error } = await supabase
+    const { error } = await clientToUse
       .from("pharmacies")
       .update({ is_suspended: true })
       .eq("id", pharmacyId);
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === "reactivate") {
-    const { error } = await supabase
+    const { error } = await clientToUse
       .from("pharmacies")
       .update({ is_suspended: false })
       .eq("id", pharmacyId);
@@ -217,9 +217,61 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === "delete") {
-    const { error } = await supabase.from("pharmacies").delete().eq("id", pharmacyId);
+    let deletedSuccessfully = false;
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // 1. Try atomic procedure if present
+    try {
+      const { data: rpcRes, error: rpcErr } = await clientToUse.rpc("delete_pharmacy_as_admin", {
+        pharmacy_id_to_delete: pharmacyId,
+      });
+
+      if (!rpcErr && rpcRes && rpcRes.success) {
+        deletedSuccessfully = true;
+      }
+    } catch {
+      // Proceed to direct cascade fallback
+    }
+
+    // 2. Direct relational cleanup fallback
+    if (!deletedSuccessfully) {
+      // Find all stock IDs for this pharmacy
+      const { data: stockItems } = await clientToUse
+        .from("pharmacy_stock")
+        .select("id")
+        .eq("pharmacy_id", pharmacyId);
+
+      const stockIds = (stockItems || []).map((s: { id: string }) => s.id);
+
+      // Clean up reservations referencing those stocks
+      if (stockIds.length > 0) {
+        await clientToUse
+          .from("reservations")
+          .delete()
+          .in("pharmacy_stock_id", stockIds);
+
+        // Clean up pharmacy stocks
+        await clientToUse
+          .from("pharmacy_stock")
+          .delete()
+          .eq("pharmacy_id", pharmacyId);
+      }
+
+      // Delete the pharmacy record with select() verification
+      const { data: deleted, error } = await clientToUse
+        .from("pharmacies")
+        .delete()
+        .eq("id", pharmacyId)
+        .select();
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      if (!deleted || deleted.length === 0) {
+        return NextResponse.json(
+          { error: `Unable to delete pharmacy "${pharmacy.name}". Permission denied or RLS policy blocked deletion.` },
+          { status: 403 }
+        );
+      }
+    }
 
     await recordAuditLog({
       adminId: admin.id,
@@ -236,4 +288,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ error: "Invalid action." }, { status: 400 });
 }
-

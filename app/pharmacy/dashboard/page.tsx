@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Town, DEFAULT_TOWNS } from "@/lib/locations";
 
 function formatTime(dateStr: string) {
   const d = new Date(dateStr);
@@ -30,6 +31,9 @@ export default function PharmacyInventoryDashboard() {
   const [pharmacyLoading, setPharmacyLoading] = useState(true);
 
   // Pharmacy creation form states
+  const [townList, setTownList] = useState<Town[]>(DEFAULT_TOWNS);
+  const [selectedTownId, setSelectedTownId] = useState<string>("town-valanchery");
+  const [selectedTownName, setSelectedTownName] = useState<string>("Valanchery");
   const [newPharmName, setNewPharmName] = useState("");
   const [newPharmAddress, setNewPharmAddress] = useState("");
   const [newPharmPhone, setNewPharmPhone] = useState("");
@@ -64,6 +68,36 @@ export default function PharmacyInventoryDashboard() {
 
   // Rx Preview Modal state
   const [viewingRx, setViewingRx] = useState<{ url: string; userName: string; medName: string } | null>(null);
+
+  useEffect(() => {
+    async function fetchTowns() {
+      try {
+        const res = await fetch("/api/towns");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.towns && json.towns.length > 0) {
+            setTownList(json.towns);
+          }
+        }
+      } catch (err) {
+        // Fallback to DEFAULT_TOWNS
+      }
+    }
+    fetchTowns();
+  }, []);
+
+  const handleTownSelect = (townId: string) => {
+    setSelectedTownId(townId);
+    const town = townList.find((t) => t.id === townId);
+    if (town) {
+      setSelectedTownName(town.name);
+      setNewPharmLat(town.lat.toString());
+      setNewPharmLng(town.lng.toString());
+      if (!newPharmAddress.toLowerCase().includes(town.name.toLowerCase())) {
+        setNewPharmAddress(prev => prev ? `${prev}, ${town.name}` : `${town.name}, Kerala`);
+      }
+    }
+  };
 
   const loadProfileAndPharmacy = async () => {
     setPharmacyLoading(true);
@@ -248,7 +282,9 @@ export default function PharmacyInventoryDashboard() {
         .from("pharmacies")
         .insert({
           owner_id: user.id,
-          name: newPharmName,
+          name: newPharmName.trim(),
+          town_id: (townList.find(t => t.id === selectedTownId) || townList[0]).id,
+          town_name: (townList.find(t => t.id === selectedTownId) || townList[0]).name,
           address: newPharmAddress,
           phone: newPharmPhone,
           license_number: newPharmLicense,
@@ -440,6 +476,19 @@ export default function PharmacyInventoryDashboard() {
               />
             </div>
             <div>
+              <label className="block text-label-md font-bold mb-1">City / Town (Kerala Municipality) *</label>
+              <select
+                required
+                className="w-full border border-outline-variant rounded-lg p-2.5 bg-surface-container-lowest font-medium text-on-surface mb-3"
+                value={selectedTownId}
+                onChange={(e) => handleTownSelect(e.target.value)}
+              >
+                {townList.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    🇮🇳 {t.name} ({t.district} District)
+                  </option>
+                ))}
+              </select>
               <label className="block text-label-md font-bold mb-1">Address *</label>
               <input
                 required
@@ -1065,7 +1114,7 @@ export default function PharmacyInventoryDashboard() {
                                 <td className="px-md py-md font-bold text-primary">{medicine.name}</td>
                                 <td className="px-md py-md font-bold">{order.quantity} units</td>
                                 <td className="px-md py-md font-bold text-on-surface">
-                                  £{(stock.price * order.quantity).toFixed(2)}
+                                  ₹{(stock.price * order.quantity).toFixed(2)}
                                 </td>
                                 <td className="px-md py-md">
                                   {order.prescription_url ? (
@@ -1428,7 +1477,7 @@ export default function PharmacyInventoryDashboard() {
               </div>
 
               <div>
-                <label className="block text-label-sm font-bold mb-1">Price (£)</label>
+                <label className="block text-label-sm font-bold mb-1">Price (₹)</label>
                 <input
                   required
                   type="number"

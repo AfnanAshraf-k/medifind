@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Town, DEFAULT_TOWNS } from "@/lib/locations";
 
 function LoginForm() {
   const router = useRouter();
@@ -17,6 +18,8 @@ function LoginForm() {
   const [role, setRole] = useState<"user" | "pharmacy">("user");
 
   // Pharmacy registration fields
+  const [townList, setTownList] = useState<Town[]>(DEFAULT_TOWNS);
+  const [selectedTownId, setSelectedTownId] = useState<string>("town-valanchery");
   const [pharmacyName, setPharmacyName] = useState("");
   const [licenseNumber, setLicenseNumber] = useState("");
   const [pharmacyPhone, setPharmacyPhone] = useState("");
@@ -38,6 +41,23 @@ function LoginForm() {
       setErrorMsg("Authentication link expired or invalid. Please try logging in again.");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    async function loadTowns() {
+      try {
+        const res = await fetch("/api/towns");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.towns && json.towns.length > 0) {
+            setTownList(json.towns);
+          }
+        }
+      } catch (err) {
+        // Fallback to DEFAULT_TOWNS
+      }
+    }
+    loadTowns();
+  }, []);
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
@@ -169,6 +189,10 @@ function LoginForm() {
             try {
               await supabase.from("pharmacies").insert({
                 owner_id: data.user.id,
+                town_id: (townList.find(t => t.id === selectedTownId) || townList[0]).id,
+                town_name: (townList.find(t => t.id === selectedTownId) || townList[0]).name,
+                lat: (townList.find(t => t.id === selectedTownId) || townList[0]).lat,
+                lng: (townList.find(t => t.id === selectedTownId) || townList[0]).lng,
                 name: pharmacyName.trim(),
                 address: pharmacyAddress.trim(),
                 phone: pharmacyPhone.trim() || null,
@@ -357,6 +381,34 @@ function LoginForm() {
                 </div>
 
                 <div className="space-y-xs">
+                  <label className="block font-label-md text-on-surface" htmlFor="pharmacyTown">
+                    City / Town (Kerala Municipality) *
+                  </label>
+                  <div className="relative mb-3">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
+                      explore
+                    </span>
+                    <select
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md transition-all appearance-none cursor-pointer"
+                      id="pharmacyTown"
+                      value={selectedTownId}
+                      onChange={(e) => {
+                        const tId = e.target.value;
+                        setSelectedTownId(tId);
+                        const town = townList.find(t => t.id === tId);
+                        if (town && !pharmacyAddress.toLowerCase().includes(town.name.toLowerCase())) {
+                          setPharmacyAddress(prev => prev ? `${prev}, ${town.name}` : `${town.name}, Kerala`);
+                        }
+                      }}
+                      required
+                    >
+                      {townList.map((town) => (
+                        <option key={town.id} value={town.id}>
+                          🇮🇳 {town.name} ({town.district} District)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <label className="block font-label-md text-on-surface" htmlFor="pharmacyAddress">
                     Pharmacy Physical Address *
                   </label>

@@ -282,6 +282,7 @@ export default function MasterAdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      setPharmaciesList((prev) => prev.filter((p) => p.id !== pharmacy.id));
       showNotification("success", data.message);
       loadStats();
       loadTabData(activeTab);
@@ -333,6 +334,7 @@ export default function MasterAdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      setUsersList((prev) => prev.filter((u) => u.id !== user.id));
       showNotification("success", data.message);
       loadStats();
       loadTabData(activeTab);
@@ -372,7 +374,7 @@ export default function MasterAdminDashboard() {
     setActionLoading(true);
     try {
       const payload: any = {
-        action: medicineModal.mode,
+        action: medicineModal.mode === "edit" ? "update" : medicineModal.mode,
         name: medicineModal.data.name,
         genericName: medicineModal.data.generic_name,
         category: medicineModal.data.category,
@@ -389,6 +391,12 @@ export default function MasterAdminDashboard() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+
+      if (medicineModal.mode === "create" && data.medicine) {
+        setMedicinesList((prev) => [data.medicine, ...prev]);
+      } else if (data.medicine) {
+        setMedicinesList((prev) => prev.map((m) => (m.id === data.medicine.id ? data.medicine : m)));
+      }
 
       showNotification("success", `Medicine catalog updated successfully.`);
       setMedicineModal({ open: false, mode: "create", data: {} });
@@ -414,6 +422,7 @@ export default function MasterAdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      setMedicinesList((prev) => prev.filter((m) => m.id !== med.id));
       showNotification("success", data.message);
       loadTabData("medicines");
     } catch (err: any) {

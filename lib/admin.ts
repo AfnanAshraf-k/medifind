@@ -1,11 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js";
 
 export interface AdminUser {
   id: string;
   email: string;
   full_name: string;
   role: "admin";
+}
+
+/**
+ * Returns an elevated service-role Supabase client if SUPABASE_SERVICE_ROLE_KEY is set,
+ * or null if not configured.
+ */
+export function getServiceRoleClient(): SupabaseClient | null {
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY;
+  if (!serviceKey) return null;
+
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+
+  return createSupabaseClient(supabaseUrl, serviceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
 }
 
 /**
@@ -77,7 +99,8 @@ export async function recordAuditLog({
   req?: NextRequest;
 }) {
   try {
-    const supabase = createClient();
+    const serviceClient = getServiceRoleClient();
+    const supabase = serviceClient || createClient();
     const ipAddress = req
       ? req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown"
       : "system";
@@ -113,7 +136,8 @@ export async function createNotification({
   metadata?: Record<string, any>;
 }) {
   try {
-    const supabase = createClient();
+    const serviceClient = getServiceRoleClient();
+    const supabase = serviceClient || createClient();
     await supabase.from("notifications").insert({
       user_id: userId,
       title,
@@ -125,4 +149,3 @@ export async function createNotification({
     console.error("Failed to create in-app notification:", err);
   }
 }
-

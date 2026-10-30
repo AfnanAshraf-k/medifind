@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthenticatedAdmin, recordAuditLog } from "@/lib/admin";
+import { getAuthenticatedAdmin, recordAuditLog, getServiceRoleClient } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -64,21 +64,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "You cannot perform this action on your own super-admin account." }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const serviceClient = getServiceRoleClient();
+  const userClient = createClient();
+  const clientToUse = serviceClient || userClient;
 
   // Retrieve user to check exists and log details
-  const { data: targetUser, error: findError } = await supabase
+  const { data: targetUser, error: findError } = await clientToUse
     .from("profiles")
     .select("id, email, full_name, role, is_suspended")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (findError || !targetUser) {
     return NextResponse.json({ error: "Target user not found." }, { status: 404 });
   }
 
   if (action === "suspend") {
-    const { error } = await supabase
+    const { error } = await clientToUse
       .from("profiles")
       .update({
         is_suspended: true,
@@ -103,7 +105,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === "reactivate") {
-    const { error } = await supabase
+    const { error } = await clientToUse
       .from("profiles")
       .update({
         is_suspended: false,
@@ -128,9 +130,72 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === "delete") {
-    const { error } = await supabase.from("profiles").delete().eq("id", userId);
+    let deletedSuccessfully = false;
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // 1. Try atomic procedure if present
+    try {
+      const { data: rpcRes, error: rpcErr } = await clientToUse.rpc("delete_user_as_admin", {
+        user_id_to_delete: userId,
+      });
+
+      if (!rpcErr && rpcRes && rpcRes.success) {
+        deletedSuccessfully = true;
+      }
+    } catch {
+      // Proceed to direct cascade fallback
+    }
+
+    // 2. Direct cascade fallback
+    if (!deletedSuccessfully) {
+      // Clean up reservations placed by this user
+      await clientToUse.from("reservations").delete().eq("user_id", userId);
+
+      // If user owns pharmacies, clean up pharmacies & stock
+      const { data: ownedPharmacies } = await clientToUse
+        .from("pharmacies")
+        .select("id")
+        .eq("owner_id", userId);
+
+      if (ownedPharmacies && ownedPharmacies.length > 0) {
+        for (const p of ownedPharmacies) {
+          const { data: pStocks } = await clientToUse.from("pharmacy_stock").select("id").eq("pharmacy_id", p.id);
+          const pStockIds = (pStocks || []).map((s: { id: string }) => s.id);
+          if (pStockIds.length > 0) {
+            await clientToUse.from("reservations").delete().in("pharmacy_stock_id", pStockIds);
+            await clientToUse.from("pharmacy_stock").delete().eq("pharmacy_id", p.id);
+          }
+          await clientToUse.from("pharmacies").delete().eq("id", p.id);
+        }
+      }
+
+      // Clean up notifications
+      await clientToUse.from("notifications").delete().eq("user_id", userId);
+
+      // If service role client is configured, also remove from Auth users
+      if (serviceClient && serviceClient.auth && serviceClient.auth.admin) {
+        try {
+          await serviceClient.auth.admin.deleteUser(userId);
+        } catch (authErr) {
+          console.warn("Service role auth user deletion warning:", authErr);
+        }
+      }
+
+      // Delete from profiles
+      const { data: deleted, error } = await clientToUse
+        .from("profiles")
+        .delete()
+        .eq("id", userId)
+        .select();
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      if (!deleted || deleted.length === 0) {
+        return NextResponse.json(
+          { error: `Unable to delete user "${targetUser.email}". Database RLS policy prevented deletion. Please apply migration 0008.` },
+          { status: 403 }
+        );
+      }
+    }
 
     await recordAuditLog({
       adminId: admin.id,
@@ -147,4 +212,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ error: "Invalid action." }, { status: 400 });
 }
-

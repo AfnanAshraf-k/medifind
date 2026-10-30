@@ -284,7 +284,7 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
                   <span className="material-symbols-outlined text-primary">local_shipping</span>
                   <div>
                     <p className="text-label-md text-on-surface">Home Delivery</p>
-                    <p className="text-body-sm text-on-surface-variant">Within 5 miles, £5.00 flat fee</p>
+                    <p className="text-body-sm text-on-surface-variant">Within 5 km, ₹50.00 flat fee</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-md">
@@ -382,7 +382,7 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
                               ? `LOW STOCK (${item.quantity})`
                               : "OUT OF STOCK"}
                           </span>
-                          <span className="text-headline-md font-bold text-on-surface">£{item.price.toFixed(2)}</span>
+                          <span className="text-headline-md font-bold text-on-surface">₹{item.price.toFixed(2)}</span>
                         </div>
                       </div>
                       <div className="flex flex-col justify-center">
@@ -464,7 +464,7 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
             <div className="bg-surface-container-low p-md rounded-xl border border-outline-variant/50 mb-md space-y-sm">
               <div className="flex justify-between text-body-sm">
                 <span className="text-on-surface-variant">Price per unit:</span>
-                <span className="font-semibold text-on-surface">£{selectedItemToReserve.price.toFixed(2)}</span>
+                <span className="font-semibold text-on-surface">₹{selectedItemToReserve.price.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-body-sm">
                 <span className="text-on-surface-variant">Quantity:</span>
@@ -488,7 +488,7 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
               </div>
               <div className="border-t border-outline-variant/30 pt-sm mt-sm flex justify-between text-body-md font-bold">
                 <span className="text-on-surface">Total Estimated:</span>
-                <span className="text-primary">£{(selectedItemToReserve.price * reserveQuantity).toFixed(2)}</span>
+                <span className="text-primary">₹{(selectedItemToReserve.price * reserveQuantity).toFixed(2)}</span>
               </div>
             </div>
 

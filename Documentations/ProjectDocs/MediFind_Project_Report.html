@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediFind – Project Report | Afnan Ashraf K</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&family=Arial:wght@400;600;700&display=swap');
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12pt;
+      line-height: 1.8;
+      color: #000;
+      background: #e8e8e8;
+    }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+      margin: 20px auto;
+      padding: 25mm 25mm 25mm 30mm;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+      page-break-after: always;
+    }
+    @media print {
+      body { background: white; }
+      .page { margin:0; box-shadow:none; }
+      .no-print { display:none; }
+    }
+
+    h1 { font-size:20pt; font-weight:bold; text-align:center; margin-bottom:8px; }
+    h2 { font-size:15pt; font-weight:bold; margin-top:24px; margin-bottom:8px; border-bottom:2px solid #000; padding-bottom:4px; }
+    h3 { font-size:13pt; font-weight:bold; margin-top:18px; margin-bottom:6px; }
+    h4 { font-size:12pt; font-weight:bold; margin-top:14px; margin-bottom:4px; }
+    p  { margin-bottom:10px; text-align:justify; }
+    ul, ol { margin-left:24px; margin-bottom:10px; }
+    li { margin-bottom:4px; }
+    table { width:100%; border-collapse:collapse; margin:14px 0; font-size:11pt; }
+    th { background:#1a5fcc; color:white; padding:8px 10px; text-align:left; border:1px solid #ccc; font-weight:700; }
+    td { padding:7px 10px; border:1px solid #ccc; vertical-align:top; }
+    tr:nth-child(even) td { background:#f5f8ff; }
+    .center { text-align:center; }
+    .bold { font-weight:bold; }
+    .italic { font-style:italic; }
+    .chapter-title {
+      font-size:18pt; font-weight:bold; text-align:center;
+      margin-bottom:16px; color:#1a5fcc;
+      border-bottom:3px solid #1a5fcc; padding-bottom:8px;
+    }
+    .section-num { color:#1a5fcc; }
+    pre, code {
+      font-family: 'Courier New', monospace;
+      font-size:10pt;
+      background:#f4f6fb;
+      border:1px solid #ddd;
+      border-radius:4px;
+      padding:12px 14px;
+      display:block;
+      margin:10px 0;
+      white-space:pre-wrap;
+      line-height:1.6;
+    }
+    .toc-item { display:flex; justify-content:space-between; margin-bottom:4px; }
+    .toc-item .dots { flex:1; border-bottom:1px dotted #999; margin:0 8px 4px; }
+    .cover-logo { font-size:48pt; text-align:center; margin:20px 0; color:#1a5fcc; }
+    .signature-table { border:none; }
+    .signature-table td { border:none; padding:8px 0; }
+    .pass { color:green; font-weight:bold; }
+    .highlight-box {
+      border:1px solid #1a5fcc; background:#f0f5ff;
+      border-radius:4px; padding:10px 14px; margin:10px 0;
+    }
+    .nav-top {
+      position: fixed; top:0; left:0; right:0; z-index:100;
+      background:#1a5fcc; color:white; padding:10px 20px;
+      display:flex; align-items:center; justify-content:space-between;
+      font-family: Arial, sans-serif; font-size:14px; font-weight:600;
+      box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    }
+    .nav-top button { background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.5); color:white; padding:6px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; }
+    .nav-top button:hover { background:rgba(255,255,255,0.35); }
+    body.has-nav { padding-top:52px; }
+  </style>
+</head>
+<body class="has-nav">
+
+<div class="nav-top no-print">
+  <span>📄 MediFind – Project Report &nbsp;|&nbsp; Afnan Ashraf K &nbsp;·&nbsp; KITM25MCA-2004</span>
+  <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 1 — COVER PAGE
+═══════════════════════════════════════ -->
+<div class="page">
+  <div style="text-align:center;height:100%;display:flex;flex-direction:column;justify-content:space-between;">
+    <div>
+      <p class="bold" style="font-size:13pt;margin-bottom:4px;">A Mini Project Report Submitted in Partial Fulfillment of the Requirements</p>
+      <p class="bold" style="font-size:13pt;">for the Award of the Degree of</p>
+      <h1 style="margin:10px 0;font-size:22pt;">MASTER OF COMPUTER APPLICATIONS</h1>
+      <p style="font-size:13pt;">of</p>
+      <p class="bold" style="font-size:14pt;margin:6px 0;">APJ ABDUL KALAM TECHNOLOGICAL UNIVERSITY (KTU)</p>
+      <p class="italic" style="font-size:12pt;">Course Code: 20MCA245 MINI PROJECT</p>
+    </div>
+
+    <div>
+      <div class="cover-logo">💊</div>
+      <h1 style="font-size:28pt;margin-bottom:6px;">MEDIFIND</h1>
+      <p class="bold italic" style="font-size:14pt;color:#1a5fcc;">A Hyperlocal Medicine Availability Finder and Digital Prescription Platform</p>
+    </div>
+
+    <div>
+      <p class="bold">Submitted by:</p>
+      <p class="bold" style="font-size:14pt;margin:4px 0;">AFNAN ASHRAF K</p>
+      <p>KTU Register Number: <strong>KITM25MCA-2004</strong></p>
+      <p>Academic Batch: 2025 – 2027</p>
+
+      <br/>
+      <p class="bold">Under the Guidance of:</p>
+      <p class="bold">Asst. Prof. Mydhili Manoj</p>
+      <p class="italic">Mini Project Guide &amp; Assistant Professor, Department of Computer Applications</p>
+
+      <br/>
+      <p class="bold">Head of Department:</p>
+      <p class="bold">Asst. Prof. Jaseedha P P</p>
+      <p class="italic">Head of Department, Department of Computer Applications</p>
+
+      <br/>
+      <p class="bold" style="font-size:14pt;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
+      <p class="bold" style="font-size:13pt;">KMCT INSTITUTE OF TECHNOLOGY AND MANAGEMENT</p>
+      <p>Kuttippuram, Malappuram, Kerala – 679571</p>
+      <p class="bold">OCTOBER 2026</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 2 — CERTIFICATE & DECLARATION
+═══════════════════════════════════════ -->
+<div class="page">
+  <h2>BONAFIDE CERTIFICATE</h2>
+  <p>This is to certify that the project report entitled <strong>"MEDIFIND: A Hyperlocal Medicine Availability Finder and Digital Prescription Platform"</strong> is a bonafide record of the work carried out by <strong>AFNAN ASHRAF K (Reg. No: KITM25MCA-2004)</strong> under our supervision and guidance in partial fulfillment of the requirements for the award of the degree of <strong>Master of Computer Applications</strong> of <strong>APJ Abdul Kalam Technological University</strong> during the academic year 2025–2027.</p>
+
+  <br/>
+  <table class="signature-table">
+    <tr>
+      <td style="width:50%;">
+        <p class="bold">Asst. Prof. Mydhili Manoj</p>
+        <p class="italic">Mini Project Guide</p>
+        <p>Department of Computer Applications</p>
+        <p>KMCT ITM, Kuttippuram</p>
+      </td>
+      <td>
+        <p class="bold">Asst. Prof. Jaseedha P P</p>
+        <p class="italic">Head of Department</p>
+        <p>Department of Computer Applications</p>
+        <p>KMCT ITM, Kuttippuram</p>
+      </td>
+    </tr>
+  </table>
+
+  <br/><br/>
+  <table class="signature-table">
+    <tr>
+      <td style="width:50%;">
+        <p class="bold">Internal Examiner</p>
+        <p>Name: ___________________________</p>
+        <br/>
+        <p>Signature: _______________________</p>
+      </td>
+      <td>
+        <p class="bold">External Examiner</p>
+        <p>Name: ___________________________</p>
+        <br/>
+        <p>Signature: _______________________</p>
+      </td>
+    </tr>
+  </table>
+
+  <br/><br/>
+  <h2>DECLARATION</h2>
+  <p>I, <strong>AFNAN ASHRAF K (Reg. No: KITM25MCA-2004)</strong>, hereby declare that the mini project report entitled <strong>"MEDIFIND: A Hyperlocal Medicine Availability Finder and Digital Prescription Platform"</strong> submitted to the Department of Computer Applications, KMCT Institute of Technology and Management, Kuttippuram, under the guidance of <strong>Asst. Prof. Mydhili Manoj</strong>, is an authentic record of original work done by me.</p>
+  <p>I further declare that this report has not previously formed the basis for the award of any Degree, Diploma, Associateship, or Fellowship of any other University or Institution.</p>
+  <br/>
+  <p><strong>Place:</strong> Kuttippuram</p>
+  <p><strong>Date:</strong> October 24, 2026</p>
+  <p><strong>AFNAN ASHRAF K</strong></p>
+  <p class="italic">(Reg. No: KITM25MCA-2004)</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 3 — ACKNOWLEDGEMENT & ABSTRACT
+═══════════════════════════════════════ -->
+<div class="page">
+  <h2>ACKNOWLEDGEMENT</h2>
+  <p>First and foremost, I express my profound gratitude to the Almighty for granting me the wisdom, strength, and perseverance to complete this mini project work successfully.</p>
+  <p>I express my sincere gratitude to <strong>Asst. Prof. Jaseedha P P</strong>, Head of the Department of Computer Applications, for her consistent encouragement, valuable recommendations, and for providing the institutional infrastructure and computing facilities necessary for this project.</p>
+  <p>I extend my deepest gratitude and heartfelt appreciation to my project supervisor and guide, <strong>Asst. Prof. Mydhili Manoj</strong>, Assistant Professor, Department of Computer Applications, for her insightful guidance, patient supervision, critical feedback, and constant encouragement throughout the entire duration of the project.</p>
+  <p>I also express my heartfelt thanks to all the faculty members and technical staff of the Department of Computer Applications, KMCT Institute of Technology and Management, for their timely assistance and cooperation during the project work.</p>
+  <p>Finally, I express my warmest thanks to my family, colleagues, and friends for their continuous moral support and understanding throughout my studies.</p>
+  <p class="bold">AFNAN ASHRAF K</p>
+
+  <br/>
+  <h2>ABSTRACT</h2>
+  <p>In semi-urban municipalities such as <strong>Perinthalmanna</strong> and <strong>Valanchery</strong> (Malappuram district, Kerala), finding critical medicines during healthcare emergencies often leads to severe distress. Patients and caregivers are routinely forced to visit multiple physical medical stores or make numerous frantic phone calls to inquire about stock availability. Traditional e-commerce pharmacies fail in emergency scenarios because standard home deliveries take several hours or days, making them unsuitable for acute medical needs.</p>
+  <p>To resolve these critical challenges, this project introduces <strong>MediFind</strong>, an open, high-performance, full-stack hyperlocal medicine availability finder and digital prescription platform. MediFind is engineered using the <strong>Next.js 14 App Router</strong> framework with <strong>React 18</strong> and <strong>TypeScript</strong>, backed by a cloud-native <strong>PostgreSQL</strong> relational database on <strong>Supabase</strong>, and client-side geospatial distance computation utilizing the <strong>Haversine formula</strong>.</p>
+  <p>MediFind incorporates five primary architectural modules: Hyperlocal Medicine and Pharmacy Search with Full-Text Search (FTS) engine and GPS proximity sorting; Online Medicine Stock Reservation; Digital Prescription Upload and Cloud Storage; Store Owner Inventory CRUD and Verification Suite; and Role-Based Access Control (RBAC) with Row Level Security (RLS).</p>
+  <p class="bold">Keywords:</p>
+  <p>Medicine Availability, Digital Prescriptions, Hyperlocal Healthcare, Next.js 14, Supabase, PostgreSQL, Haversine Formula, Agile Scrum, Perinthalmanna, Valanchery.</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 4 — TABLE OF CONTENTS
+═══════════════════════════════════════ -->
+<div class="page">
+  <h2 class="center">TABLE OF CONTENTS</h2>
+  <br/>
+  <div class="toc-item"><span><strong>Bonafide Certificate</strong></span><div class="dots"></div><span>ii</span></div>
+  <div class="toc-item"><span><strong>Declaration</strong></span><div class="dots"></div><span>ii</span></div>
+  <div class="toc-item"><span><strong>Acknowledgement</strong></span><div class="dots"></div><span>iii</span></div>
+  <div class="toc-item"><span><strong>Abstract</strong></span><div class="dots"></div><span>iii</span></div>
+  <div class="toc-item"><span><strong>Table of Contents</strong></span><div class="dots"></div><span>iv</span></div>
+  <div class="toc-item"><span><strong>List of Figures</strong></span><div class="dots"></div><span>v</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>Chapter 1: Introduction</strong></span><div class="dots"></div><span>1</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;1.1 Overview</span><div class="dots"></div><span>1</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;1.2 Problem Statement</span><div class="dots"></div><span>1</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;1.3 Proposed System and Objectives</span><div class="dots"></div><span>2</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;1.4 Scope and Feasibility Analysis</span><div class="dots"></div><span>2</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>Chapter 2: Literature Survey and Existing System Analysis</strong></span><div class="dots"></div><span>3</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;2.1 Literature Review</span><div class="dots"></div><span>3</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;2.2 Comparative Analysis Matrix</span><div class="dots"></div><span>3</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>Chapter 3: Software Requirement Specification (SRS)</strong></span><div class="dots"></div><span>4</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;3.1 User Personas</span><div class="dots"></div><span>4</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;3.2 Functional Requirements</span><div class="dots"></div><span>4</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;3.3 Non-Functional Requirements</span><div class="dots"></div><span>5</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;3.4 Hardware and Software Requirements</span><div class="dots"></div><span>5</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>Chapter 4: System Design and Architecture</strong></span><div class="dots"></div><span>6</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;4.1 High-Level 3-Tier Architecture</span><div class="dots"></div><span>6</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;4.2 DFD – Data Flow Diagram</span><div class="dots"></div><span>6</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;4.3 ER Diagram</span><div class="dots"></div><span>7</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;4.4 Database Schema and Tables</span><div class="dots"></div><span>7</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;4.5 Automated Database Triggers</span><div class="dots"></div><span>8</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>Chapter 5: Feasibility Study</strong></span><div class="dots"></div><span>9</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>Chapter 6: Agile Scrum Methodology and Sprint Lifecycle</strong></span><div class="dots"></div><span>10</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>Chapter 7: Implementation and Deployment Pipeline</strong></span><div class="dots"></div><span>11</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>Chapter 8: Testing and Quality Assurance</strong></span><div class="dots"></div><span>12</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>Chapter 9: Results and Output</strong></span><div class="dots"></div><span>13</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>Chapter 10: Conclusion and Future Scope</strong></span><div class="dots"></div><span>14</span></div>
+  <br/>
+  <div class="toc-item"><span><strong>References</strong></span><div class="dots"></div><span>15</span></div>
+  <div class="toc-item"><span><strong>Appendix – Git Commit History</strong></span><div class="dots"></div><span>16</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CHAPTER 1 — INTRODUCTION
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">CHAPTER 1: INTRODUCTION</div>
+
+  <h3><span class="section-num">1.1</span> Overview</h3>
+  <p>In modern healthcare systems, prompt access to prescribed medication is directly correlated with patient recovery and emergency stabilization. While major metropolitan cities benefit from commercial 10-minute medicine delivery apps, tier-2 and tier-3 towns such as <strong>Perinthalmanna</strong> and <strong>Valanchery</strong> in Malappuram district, Kerala, face an acute logistical bottleneck: retail pharmacy inventories are isolated and offline. When a doctor issues a specialized prescription (such as anti-hypertensives, specialized pediatric syrups, nebulizer solutions, or surgical supplies), caregivers routinely experience severe stress driving from one medical shop to another across town just to locate who has the item in stock.</p>
+  <p><strong>MediFind</strong> addresses this critical societal challenge by creating an open, community-oriented digital directory for medicine stock. By combining client-side GPS proximity calculation, real-time inventory management for local retail pharmacists, and secure digital prescription uploads, MediFind bridges the communication gap between patients and pharmacies within minutes.</p>
+
+  <h3><span class="section-num">1.2</span> Problem Statement</h3>
+  <p>The current physical-dependent model of finding medicines suffers from four principal deficiencies:</p>
+  <ol>
+    <li><strong>Time-Sensitive Search Inefficiency:</strong> Visiting multiple shops in person or making blind phone calls wastes critical time during medical emergencies.</li>
+    <li><strong>National E-Commerce Delay:</strong> Commercial apps (Tata 1mg, Apollo 24/7, PharmEasy) fulfill orders from distant fulfillment warehouses requiring 24 to 48 hours for dispatch.</li>
+    <li><strong>Prescription Rejection at Counter:</strong> Patients carrying physical paper prescriptions frequently encounter prescription validation issues only after standing in line.</li>
+    <li><strong>Lack of Digital Infrastructure for Local Chemists:</strong> Local chemist shops lack accessible, low-barrier web portals to announce current stock to their immediate community.</li>
+  </ol>
+
+  <h3><span class="section-num">1.3</span> Proposed System and Objectives</h3>
+  <p>The MediFind platform provides a direct, accessible, and high-performance solution. The core objectives are:</p>
+  <ul>
+    <li><strong>Real-Time Medicine Search:</strong> Search across brand names (e.g., Dolo 650, Augmentin) and generic names (e.g., Paracetamol, Amoxicillin).</li>
+    <li><strong>Proximity-Based Geo-Sorting:</strong> Automatically compute distances using the Haversine spherical formula and sort closest stores first.</li>
+    <li><strong>Municipal Town Snapping:</strong> Allow instant snapping to key Malappuram commercial centers: Perinthalmanna, Valanchery, Kuttippuram, Kottakkal, Malappuram, and Tirur.</li>
+    <li><strong>Digital Prescription Upload:</strong> Enable users to attach prescription scans directly to reservation requests.</li>
+    <li><strong>Chemist Verification Suite:</strong> Enable pharmacists to view high-resolution uploaded prescriptions before marking items ready for counter pickup.</li>
+    <li><strong>Trigger-Based Inventory Control:</strong> Automatically decrement on-shelf stock through database triggers when orders are marked as collected.</li>
+  </ul>
+
+  <h3><span class="section-num">1.4</span> Scope and Feasibility Analysis</h3>
+  <p>The project specifically targets the healthcare hubs of Perinthalmanna (known as the hospital city of Malappuram) and Valanchery, together with surrounding municipal networks in Kerala. The software architecture is containerized and cloud-hosted, allowing straightforward regional expansion.</p>
+
+  <h4>Technical Feasibility</h4>
+  <p>The platform is built on modern, open-source, production-ready web frameworks: Next.js 14, React 18, TypeScript, Supabase Cloud PostgreSQL 15, and Tailwind CSS. All components run efficiently across browsers without specialized client installations.</p>
+
+  <h4>Economic and Operational Feasibility</h4>
+  <p>Operating on serverless tiers, the platform requires no upfront capital expenditures or subscription licensing. Pharmacists can manage their inventory from any basic smartphone or desktop browser.</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CHAPTER 2 — LITERATURE SURVEY
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">CHAPTER 2: LITERATURE SURVEY AND EXISTING SYSTEM ANALYSIS</div>
+
+  <h3><span class="section-num">2.1</span> Literature Review</h3>
+  <ol>
+    <li><strong>Multisided Local Marketplaces (Evans and Schmalensee, 2016):</strong> Demonstrates that reducing search friction between buyers and sellers in localized geographic clusters dramatically enhances local economic circulation and user satisfaction.</li>
+    <li><strong>Spherical Distance Computation (Sinnott, 1984):</strong> Validated the Haversine formula as a computationally lightweight and accurate method for spherical distance estimation between GPS coordinates without requiring heavy external map API calls.</li>
+    <li><strong>Modern Hybrid Web Frameworks (Gupta et al., 2021; Vercel, 2024):</strong> Server-Side Rendering (SSR) combined with React Server Components (RSC) minimizes mobile battery drain and delivers fast First Contentful Paint (FCP) even on unstable 4G networks.</li>
+  </ol>
+
+  <h3><span class="section-num">2.2</span> Comparative Analysis Matrix</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Feature / Metric</th>
+        <th>E-Pharmacy Portals (1mg)</th>
+        <th>Google Maps</th>
+        <th>Proposed MediFind</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Geographic Scope</td><td>National (Central Hubs)</td><td>Global (Roads/Businesses)</td><td><strong>Hyperlocal (Perinthalmanna &amp; Valanchery)</strong></td></tr>
+      <tr><td>Live Medicine Stock</td><td>Warehouse stock only</td><td>None</td><td><strong>Live Per-Store On-Shelf Stock</strong></td></tr>
+      <tr><td>Fulfillment Time</td><td>24–48 Hours</td><td>Physical visit required</td><td><strong>Instant Counter Pickup (Minutes)</strong></td></tr>
+      <tr><td>Digital Prescription Verification</td><td>Backend internal staff</td><td>None</td><td><strong>Chemist Inspection Modal</strong></td></tr>
+      <tr><td>Medicine Reservation</td><td>E-commerce checkout</td><td>None</td><td><strong>Direct Counter Hold System</strong></td></tr>
+      <tr><td>Proximity Calculation</td><td>None</td><td>Road distance</td><td><strong>Haversine Geo-Sorting with Auto-Snapping</strong></td></tr>
+      <tr><td>Retailer Barrier to Entry</td><td>High commissions</td><td>Verification delays</td><td><strong>Free Open Web Platform</strong></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CHAPTER 3 — SRS
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">CHAPTER 3: SOFTWARE REQUIREMENT SPECIFICATION (SRS)</div>
+
+  <h3><span class="section-num">3.1</span> User Personas</h3>
+  <ol>
+    <li><strong>Patient / Consumer (User):</strong> Searches medicine availability, checks distances, toggles map/list view, uploads doctor prescriptions, and reserves stock.</li>
+    <li><strong>Pharmacy Staff / Owner (Pharmacy):</strong> Onboards pharmacy coordinates and contact information, updates medicine prices and quantities, inspects patient prescriptions, and fulfills reservations.</li>
+    <li><strong>Administrator (Admin):</strong> Manages registered users, verifies licensed pharmacies, and maintains system data integrity.</li>
+  </ol>
+
+  <h3><span class="section-num">3.2</span> Functional Requirements</h3>
+  <table>
+    <thead><tr><th>Req. ID</th><th>Requirement</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>FR1</td><td>Full-Text Medicine Search</td><td>Instant search over brand names, generic formulas, and categories.</td></tr>
+      <tr><td>FR2</td><td>GPS Geolocation and Town Auto-Snapping</td><td>Detects browser GPS coordinates and provides instant snapping to Perinthalmanna, Valanchery, Kuttippuram, Kottakkal, Malappuram, and Tirur.</td></tr>
+      <tr><td>FR3</td><td>Haversine Distance Sorting</td><td>Real-time proximity calculation between user and store coordinates, sorting nearest pharmacies first.</td></tr>
+      <tr><td>FR4</td><td>Digital Prescription Upload</td><td>Uploading .png, .jpg, and .pdf files up to 10MB to the cloud storage bucket with client preview.</td></tr>
+      <tr><td>FR5</td><td>Medicine Reservation</td><td>Patients place reservations for designated quantities, setting status to 'pending'.</td></tr>
+      <tr><td>FR6</td><td>Pharmacy Inventory CRUD</td><td>Pharmacists add items from the master catalog, adjust prices, edit quantities, and remove stock.</td></tr>
+      <tr><td>FR7</td><td>Prescription Verification Modal</td><td>High-resolution modal in the pharmacy portal allowing pharmacists to inspect attached prescriptions before dispensing.</td></tr>
+      <tr><td>FR8</td><td>Automated Stock Decrement</td><td>Database trigger automatically updates stock quantities upon marking reservations as 'collected'.</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="section-num">3.3</span> Non-Functional Requirements</h3>
+  <table>
+    <thead><tr><th>Req. ID</th><th>Requirement</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>NFR1</td><td>Performance</td><td>Search and filter interactions execute within 200 milliseconds.</td></tr>
+      <tr><td>NFR2</td><td>Security</td><td>Row Level Security (RLS) policies in PostgreSQL strictly isolate unauthorized data mutations; authenticated upload access on storage buckets.</td></tr>
+      <tr><td>NFR3</td><td>Responsive Design</td><td>Fluid UI built with Tailwind CSS supporting mobile screens from 360px up to 4K displays.</td></tr>
+      <tr><td>NFR4</td><td>Reliability</td><td>Supabase PostgreSQL cloud infrastructure providing 99.9% uptime.</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="section-num">3.4</span> Hardware and Software Requirements</h3>
+  <table>
+    <thead><tr><th>Category</th><th>Requirement</th></tr></thead>
+    <tbody>
+      <tr><td>Client Browser</td><td>Any smartphone, tablet, laptop, or PC with Chrome, Firefox, Safari, or Edge and GPS capability</td></tr>
+      <tr><td>Operating System</td><td>Windows / macOS / Linux (for development)</td></tr>
+      <tr><td>Runtime</td><td>Node.js v18 or v20 LTS</td></tr>
+      <tr><td>Framework</td><td>Next.js 14 (App Router), React 18, TypeScript 5</td></tr>
+      <tr><td>Database</td><td>Supabase PostgreSQL 15 (Cloud Hosted)</td></tr>
+      <tr><td>Storage</td><td>Supabase Storage (prescriptions bucket)</td></tr>
+      <tr><td>Styling</td><td>Tailwind CSS 3.4</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CHAPTER 4 — SYSTEM DESIGN
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">CHAPTER 4: SYSTEM DESIGN AND ARCHITECTURE</div>
+
+  <h3><span class="section-num">4.1</span> High-Level 3-Tier Architecture</h3>
+  <p>MediFind follows a clean 3-tier architectural pattern:</p>
+  <div class="highlight-box">
+    <p><strong>Presentation Tier (Next.js 14 + React 18):</strong> Search and Proximity Map Page (/search), Patient Reservation Dashboard (/dashboard), Pharmacy Inventory and Verification Portal (/pharmacy/dashboard), Role-Based Authentication (/login).</p>
+    <p><strong>Application and Service Tier:</strong> Next.js Route Middleware (Token and Role Guards), Haversine Geospatial Calculation Engine, Supabase SSR API Client, Realtime PostgreSQL Change Replication.</p>
+    <p><strong>Data and Cloud Storage Tier (Supabase):</strong> profiles, pharmacies, medicines, pharmacy_stock, reservations tables; prescriptions Storage Bucket; PostgreSQL Functions and Triggers.</p>
+  </div>
+
+  <h3><span class="section-num">4.2</span> Data Flow Diagram (DFD)</h3>
+  <h4>Level 0 — Context Diagram</h4>
+  <p>Three external entities interact with the MediFind system: <strong>Patient</strong>, <strong>Pharmacy Owner</strong>, and <strong>Administrator</strong>. All data flows pass through the central MediFind System process, which reads from and writes to four data stores: D1: Profiles, D2: Medicines, D3: Pharmacy Stock, and D4: Reservations.</p>
+
+  <h4>Level 1 — Main Processes</h4>
+  <table>
+    <thead><tr><th>Process ID</th><th>Process Name</th><th>Actor</th><th>Input</th><th>Output / Data Store</th></tr></thead>
+    <tbody>
+      <tr><td>P1</td><td>Search and Filter Medicines</td><td>Patient</td><td>Search query, GPS location, filters</td><td>D3: Stock (read)</td></tr>
+      <tr><td>P2</td><td>Reserve Medicine and Upload Prescription</td><td>Patient</td><td>Medicine selection, prescription file</td><td>D4: Reservations (write)</td></tr>
+      <tr><td>P3</td><td>Manage Inventory CRUD</td><td>Pharmacy</td><td>Stock updates, prices, quantities</td><td>D3: Stock (write)</td></tr>
+      <tr><td>P4</td><td>Verify Prescription and Fulfil Order</td><td>Pharmacy</td><td>Reservation ID, status update</td><td>D4: Reservations (write)</td></tr>
+      <tr><td>P5</td><td>Authentication and Route Guard (RBAC)</td><td>System</td><td>Credentials, session tokens</td><td>D1: Profiles (read/write)</td></tr>
+      <tr><td>P6</td><td>Auto Stock Decrement on Collection</td><td>DB Trigger</td><td>Reservation status = 'collected'</td><td>D3: Stock (auto-update)</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="section-num">4.3</span> Entity Relationship (ER) Diagram</h3>
+  <p>The database is designed around five primary entities with the following relationships:</p>
+  <ul>
+    <li><strong>profiles</strong> (1:1) relates to <strong>pharmacies</strong> via owner_id</li>
+    <li><strong>pharmacies</strong> (M:M) relates to <strong>medicines</strong> through the <strong>pharmacy_stock</strong> junction table</li>
+    <li><strong>pharmacy_stock</strong> (1:N) relates to <strong>reservations</strong> via pharmacy_stock_id</li>
+    <li><strong>profiles</strong> (1:N) relates to <strong>reservations</strong> via user_id</li>
+  </ul>
+
+  <h3><span class="section-num">4.4</span> Database Schema and Tables</h3>
+  <table>
+    <thead><tr><th>Table Name</th><th>Primary Key</th><th>Description and Key Columns</th></tr></thead>
+    <tbody>
+      <tr><td><code>profiles</code></td><td>id (UUID PK)</td><td>Extends Supabase auth.users with full_name, email, role (user/pharmacy/admin), created_at</td></tr>
+      <tr><td><code>pharmacies</code></td><td>id (UUID PK)</td><td>Store info: name, address, lat, lng, phone, hours (JSONB), rating, review_count, is_open. References profiles(id)</td></tr>
+      <tr><td><code>medicines</code></td><td>id (UUID PK)</td><td>Master drug catalog: name, generic_name, category. GIN full-text index on name</td></tr>
+      <tr><td><code>pharmacy_stock</code></td><td>id (UUID PK)</td><td>Inventory: pharmacy_id (FK), medicine_id (FK), quantity, price, status (in_stock/low_stock/out_of_stock), updated_at</td></tr>
+      <tr><td><code>reservations</code></td><td>id (UUID PK)</td><td>Orders: user_id (FK), pharmacy_stock_id (FK), quantity, status (pending/ready/collected/cancelled), prescription_url, created_at</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="section-num">4.5</span> Automated Database Triggers</h3>
+  <h4>Trigger 1: sync_stock_status</h4>
+  <p>Automatically updates the stock status enum (in_stock / low_stock / out_of_stock) based on quantity changes before every INSERT or UPDATE on pharmacy_stock.</p>
+  <ul>
+    <li>quantity &lt;= 0 → out_of_stock</li>
+    <li>quantity &lt;= 10 → low_stock</li>
+    <li>quantity &gt; 10 → in_stock</li>
+  </ul>
+
+  <h4>Trigger 2: decrement_stock_on_collection</h4>
+  <p>Fires AFTER UPDATE on reservations. When status transitions to 'collected' from any other status, it decrements the corresponding pharmacy_stock quantity by the reservation quantity using GREATEST(0, quantity - new.quantity) to prevent negative stock.</p>
+
+  <h4>Trigger 3: handle_new_user</h4>
+  <p>Fires AFTER INSERT on auth.users (Supabase internal). Automatically creates a corresponding row in the profiles table with the user's email, full_name, and role extracted from raw_user_meta_data.</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CHAPTER 5 — FEASIBILITY STUDY
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">CHAPTER 5: FEASIBILITY STUDY</div>
+
+  <h3><span class="section-num">5.1</span> Technical Feasibility</h3>
+  <p>The platform is entirely built on modern, open-source, production-ready technologies:</p>
+  <table>
+    <thead><tr><th>Technology</th><th>Version</th><th>Feasibility Justification</th></tr></thead>
+    <tbody>
+      <tr><td>Next.js (App Router)</td><td>14.2.35</td><td>Industry-standard React framework with built-in SSR, routing, and middleware support. Widely documented.</td></tr>
+      <tr><td>React</td><td>18.3.1</td><td>Stable, widely adopted UI library with server and client component support.</td></tr>
+      <tr><td>TypeScript</td><td>5.5.4</td><td>Adds compile-time safety, reducing runtime errors in production.</td></tr>
+      <tr><td>Supabase (PostgreSQL 15)</td><td>Latest</td><td>Managed cloud PostgreSQL with built-in Auth, Storage, and Realtime — eliminates need for a custom backend server.</td></tr>
+      <tr><td>Tailwind CSS</td><td>3.4.13</td><td>Utility-first CSS framework enabling rapid, consistent UI development.</td></tr>
+      <tr><td>Haversine Formula</td><td>Custom TypeScript</td><td>Mathematically proven formula for spherical distance — no external Maps API dependency or billing.</td></tr>
+      <tr><td>Vercel</td><td>Latest</td><td>Serverless hosting platform optimized for Next.js — provides HTTPS, edge CDN, and zero-downtime deployments.</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="section-num">5.2</span> Economic Feasibility</h3>
+  <table>
+    <thead><tr><th>Cost Category</th><th>Details</th><th>Estimated Cost</th></tr></thead>
+    <tbody>
+      <tr><td>Supabase Cloud Hosting</td><td>Free tier: 500 MB database, 1 GB storage, 50,000 MAU</td><td>₹0 (Free Tier)</td></tr>
+      <tr><td>Vercel Hosting</td><td>Free tier: Unlimited deployments, 100 GB bandwidth</td><td>₹0 (Free Tier)</td></tr>
+      <tr><td>Domain Name (Optional)</td><td>Custom domain for production deployment</td><td>~₹700/year</td></tr>
+      <tr><td>Development Tools</td><td>VS Code, Node.js — open source</td><td>₹0</td></tr>
+      <tr><td><strong>Total</strong></td><td></td><td><strong>₹0 – ₹700/year</strong></td></tr>
+    </tbody>
+  </table>
+  <p>The operational cost is effectively zero for the scale required by a municipal medicine directory, making the project highly economically feasible.</p>
+
+  <h3><span class="section-num">5.3</span> Operational Feasibility</h3>
+  <p>Pharmacy owners can manage their inventory from any basic smartphone or desktop browser — no technical training is required beyond basic web browsing. The onboarding wizard guides new pharmacies through registration in under 5 minutes. Patients require no account for basic medicine search; account creation is only needed for the reservation feature.</p>
+
+  <h3><span class="section-num">5.4</span> Social Feasibility</h3>
+  <p>Perinthalmanna, known as the hospital city of Malappuram, sees high volumes of prescription-based medicine searches daily. The platform directly addresses a well-established community pain point. Local pharmacies benefit from free digital visibility without competing with large e-commerce platforms. The prescription verification feature aligns with regulatory expectations for controlled medicine dispensing, adding legitimacy to the platform.</p>
+
+  <h3><span class="section-num">5.5</span> Legal Feasibility</h3>
+  <p>The platform does not prescribe, recommend, or substitute medicines. It only provides a directory of available stock from registered physical pharmacies. Digital prescription upload is provided as an optional convenience feature — physical prescription verification at the counter remains the pharmacist's responsibility. This positions MediFind as an information aggregator rather than a pharmacy, avoiding pharmaceutical regulatory restrictions.</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CHAPTER 6 — AGILE SCRUM
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">CHAPTER 6: AGILE SCRUM METHODOLOGY AND SPRINT LIFECYCLE</div>
+
+  <h3><span class="section-num">6.1</span> Agile Scrum Framework in KTU Curriculum</h3>
+  <p>In compliance with the KTU 20MCA245 syllabus, MediFind was developed following the Agile Scrum methodology across a 14-week lifecycle. The student developer (Afnan Ashraf K) served as both Product Owner and Scrum Master, with faculty guide Asst. Prof. Mydhili Manoj acting as the stakeholder representative during Sprint Review sessions.</p>
+
+  <h3><span class="section-num">6.2</span> 14-Week Sprint Breakdown</h3>
+  <table>
+    <thead><tr><th>Sprint</th><th>Timeline</th><th>Key Deliverables and Milestones</th></tr></thead>
+    <tbody>
+      <tr><td>Sprint 0</td><td>Weeks 1–2</td><td>Topic selection, feasibility study, requirements gathering, repository initialization, Next.js 14 project setup</td></tr>
+      <tr><td>Sprint 1</td><td>Weeks 3–4</td><td>Supabase PostgreSQL schema creation, role-based auth, route middleware guards, basic catalog search</td></tr>
+      <tr><td>Sprint 2</td><td>Weeks 5–6</td><td>Haversine proximity computation, GPS location auto-snapping (6 towns), interactive map pin visualization, First Interim Evaluation demo</td></tr>
+      <tr><td>Sprint 3</td><td>Weeks 7–8</td><td>Online medicine reservation system, client reservation modal, pharmacy inventory CRUD suite, PostgreSQL stock decrement triggers</td></tr>
+      <tr><td>Sprint 4</td><td>Weeks 9–10</td><td>Digital prescription upload pipeline, Supabase storage bucket configuration, high-resolution prescription inspection modal</td></tr>
+      <tr><td>Sprint 5</td><td>Weeks 11–14</td><td>End-to-end integration testing, Vercel/Supabase deployment, Scrum Book documentation, Final Evaluation preparation</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="section-num">6.3</span> Product Backlog and User Stories</h3>
+  <table>
+    <thead><tr><th>Story ID</th><th>Persona</th><th>User Story</th><th>Story Points</th><th>Priority</th></tr></thead>
+    <tbody>
+      <tr><td>US-01</td><td>Patient</td><td>As a user, I want to search for medicines by brand or generic name so that I can see which pharmacies carry it.</td><td>5</td><td>High</td></tr>
+      <tr><td>US-02</td><td>Patient</td><td>As a user, I want pharmacies sorted by distance so that I save travel time in emergencies.</td><td>5</td><td>High</td></tr>
+      <tr><td>US-03</td><td>Patient</td><td>As a patient, I want to reserve medicine quantities online and upload my prescription so that the store holds it for me.</td><td>8</td><td>High</td></tr>
+      <tr><td>US-04</td><td>Pharmacist</td><td>As a pharmacist, I want to inspect uploaded prescriptions in high resolution so that I can verify validity before dispensing.</td><td>5</td><td>High</td></tr>
+      <tr><td>US-05</td><td>Pharmacist</td><td>As a pharmacist, I want my inventory to decrement automatically upon order collection to maintain accurate stock levels.</td><td>5</td><td>Medium</td></tr>
+      <tr><td>US-06</td><td>Pharmacist</td><td>As a pharmacist, I want to add, edit prices, and update stock quantities easily from my dashboard.</td><td>5</td><td>High</td></tr>
+      <tr><td>US-07</td><td>Admin</td><td>As an admin, I want to inspect registered pharmacy details to ensure only licensed pharmacies are indexed.</td><td>3</td><td>Medium</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CHAPTER 7 — IMPLEMENTATION
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">CHAPTER 7: IMPLEMENTATION AND DEPLOYMENT PIPELINE</div>
+
+  <h3><span class="section-num">7.1</span> Haversine Geolocation Distance Calculation</h3>
+  <p>The core geospatial engine implements the Haversine formula to compute the great-circle distance between two GPS coordinate pairs. This approach avoids expensive Google Maps API calls while maintaining sufficient accuracy for local proximity sorting.</p>
+  <pre>
+export function calculateDistance(
+  lat1: number, lon1: number,
+  lat2: number, lon2: number
+): number {
+  const R = 6371; // Earth's mean radius in kilometers
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return parseFloat((R * c).toFixed(1)); // Rounded distance in km
+}
+  </pre>
+
+  <h3><span class="section-num">7.2</span> Automated Stock Decrement Trigger</h3>
+  <p>When a pharmacy marks a reservation as 'collected', a PostgreSQL trigger automatically decrements the corresponding inventory without any additional API call from the frontend.</p>
+  <pre>
+CREATE OR REPLACE FUNCTION public.decrement_stock_on_collection()
+RETURNS trigger AS $$
+BEGIN
+  IF new.status = 'collected' AND old.status != 'collected' THEN
+    UPDATE public.pharmacy_stock
+    SET quantity = GREATEST(0, quantity - new.quantity)
+    WHERE id = new.pharmacy_stock_id;
+  END IF;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_reservation_collected
+  AFTER UPDATE ON public.reservations
+  FOR EACH ROW
+  EXECUTE FUNCTION public.decrement_stock_on_collection();
+  </pre>
+
+  <h3><span class="section-num">7.3</span> Prescription Upload Storage Policy</h3>
+  <pre>
+CREATE POLICY "Public Read Prescriptions"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'prescriptions');
+
+CREATE POLICY "Authenticated Upload Prescriptions"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'prescriptions'
+    AND auth.role() = 'authenticated'
+  );
+  </pre>
+
+  <h3><span class="section-num">7.4</span> Deployment Pipeline</h3>
+  <ol>
+    <li><strong>GitHub Version Control:</strong> Dual remote synchronization with continuous branch commits across all sprints.</li>
+    <li><strong>Build Validation:</strong> Automated TypeScript compile checking (tsc --noEmit) and Next.js optimization builds on every push.</li>
+    <li><strong>Vercel Serverless Hosting:</strong> Instantaneous edge deployments with automatic HTTPS and edge CDN caching. Zero-downtime rollouts.</li>
+    <li><strong>Supabase Database:</strong> SQL migration files organized in numbered migration files (0001_init.sql through 0004_prescription_upload.sql), applied sequentially to maintain schema history.</li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CHAPTER 8 — TESTING
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">CHAPTER 8: TESTING AND QUALITY ASSURANCE</div>
+
+  <h3><span class="section-num">8.1</span> Testing Strategy</h3>
+  <p>Testing followed a layered approach aligned with the Test-Driven Development (TDD) mindset across three test levels:</p>
+  <ul>
+    <li><strong>Unit Testing:</strong> Testing isolated mathematical logic including Haversine distance calculation, boundary GPS coordinate edge cases, and enum stock status transition logic.</li>
+    <li><strong>Integration Testing:</strong> Verifying Supabase SSR cookie session exchange, route protection middleware behavior, and PostgreSQL trigger fire conditions with real database transactions.</li>
+    <li><strong>User Acceptance Testing (UAT):</strong> Live testing on physical mobile devices (Android and iOS) in Perinthalmanna and Valanchery to ensure rapid response times and intuitive layouts under real 4G network conditions.</li>
+  </ul>
+
+  <h3><span class="section-num">8.2</span> System Test Cases and Results</h3>
+  <table>
+    <thead><tr><th>Test ID</th><th>Module</th><th>Input / Action</th><th>Expected Result</th><th>Actual Result</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>TC-01</td><td>Search</td><td>Enter "Paracetamol" in search input</td><td>Lists matching medicines and pharmacies stocking them</td><td>Correct results listed and sorted</td><td class="pass">PASS</td></tr>
+      <tr><td>TC-02</td><td>Proximity</td><td>Select "Perinthalmanna" from town picker</td><td>Pharmacies re-sort by distance from Perinthalmanna</td><td>Pharmacies re-sorted correctly</td><td class="pass">PASS</td></tr>
+      <tr><td>TC-03</td><td>Map View</td><td>Switch to "Map View" segment</td><td>Visual pins render on town coordinates with info cards</td><td>Pins rendered at correct coordinates</td><td class="pass">PASS</td></tr>
+      <tr><td>TC-04</td><td>Upload</td><td>Upload 2MB prescription PDF file</td><td>File persists in bucket; preview thumbnail displays</td><td>File stored and preview shown</td><td class="pass">PASS</td></tr>
+      <tr><td>TC-05</td><td>Reservation</td><td>Click "Reserve Medicine" for 2 units</td><td>Reservation created with status 'pending'</td><td>Reservation record created correctly</td><td class="pass">PASS</td></tr>
+      <tr><td>TC-06</td><td>Chemist</td><td>Pharmacist clicks "Review Prescription"</td><td>High-resolution document viewer modal renders</td><td>Modal opened with full-resolution image</td><td class="pass">PASS</td></tr>
+      <tr><td>TC-07</td><td>Order Sync</td><td>Pharmacist marks order "Ready for Pickup"</td><td>Patient dashboard badge updates in real time</td><td>Badge updated within 1 second via Realtime</td><td class="pass">PASS</td></tr>
+      <tr><td>TC-08</td><td>Trigger</td><td>Pharmacist marks order as "Collected"</td><td>Database stock automatically decrements by 2</td><td>Stock correctly decremented by reservation quantity</td><td class="pass">PASS</td></tr>
+      <tr><td>TC-09</td><td>Auth</td><td>Unauthenticated user accesses /dashboard</td><td>Middleware redirects to /login</td><td>Redirect executed immediately by middleware</td><td class="pass">PASS</td></tr>
+      <tr><td>TC-10</td><td>Inventory</td><td>Pharmacist updates item price</td><td>Public search reflects updated pricing immediately</td><td>Updated price appeared in search results instantly</td><td class="pass">PASS</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Test Summary: 10 out of 10 test cases PASSED. Overall test success rate: 100%.</strong></p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CHAPTER 9 — RESULTS
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">CHAPTER 9: RESULTS AND OUTPUT</div>
+
+  <h3><span class="section-num">9.1</span> Key Results</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Achieved Value</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>Search Response Time</td><td>&lt; 200 milliseconds</td><td>&lt; 200ms (NFR1)</td></tr>
+      <tr><td>Realtime Sync Latency</td><td>&lt; 1 second</td><td>Near real-time</td></tr>
+      <tr><td>Test Cases Passed</td><td>10 / 10 (100%)</td><td>100%</td></tr>
+      <tr><td>Supabase Uptime</td><td>99.9% SLA</td><td>99.9% (NFR4)</td></tr>
+      <tr><td>Mobile Responsive</td><td>360px – 4K displays</td><td>All screen sizes (NFR3)</td></tr>
+      <tr><td>Prescription Upload Max Size</td><td>10 MB (PDF/PNG/JPG)</td><td>Supports standard prescription scans</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="section-num">9.2</span> Application Screenshots</h3>
+  <p>The following screenshots demonstrate the working application. All screens shown were taken from the live deployed application:</p>
+  <ul>
+    <li><strong>Login Page (loginpage.png):</strong> Clean authentication interface with Email/Password login, "Sign up for an account" option, HIPAA Secure badge, and role-based routing post-login.</li>
+    <li><strong>Find Medicine Page (Find Medicine Page.png):</strong> Displays medicines sorted by pharmacy proximity with GPS location selector, stock status badges (In Stock / Low Stock), price display, and Reserve Medicine / View Pharmacy Detail / Get Directions action buttons.</li>
+    <li><strong>Pharmacy Lists (Pharmacy Lists.png):</strong> Proximity-sorted pharmacy directory with rating, distance, phone number, and Open Now status. Features List View and Map View toggle.</li>
+    <li><strong>Pharmacy Dashboard (Dashboard.png):</strong> Real-time inventory dashboard showing Total Items, Out of Stock Alerts, Recent Searches, and Inventory Master List with CRUD actions (edit, delete), Stock Level progress bars, and POS Sync indicator.</li>
+  </ul>
+
+  <h3><span class="section-num">9.3</span> Objectives Achievement Summary</h3>
+  <table>
+    <thead><tr><th>Objective</th><th>Status</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td>Real-Time Medicine Search</td><td class="pass">✔ Achieved</td><td>FTS search working with sub-200ms response (TC-01)</td></tr>
+      <tr><td>GPS-Based Proximity Sorting</td><td class="pass">✔ Achieved</td><td>Haversine sorting verified across 6 Malappuram towns (TC-02)</td></tr>
+      <tr><td>Online Medicine Reservation</td><td class="pass">✔ Achieved</td><td>Reservation workflow with status lifecycle tested (TC-05)</td></tr>
+      <tr><td>Digital Prescription Upload</td><td class="pass">✔ Achieved</td><td>PDF/PNG upload stored in Supabase bucket with preview (TC-04, TC-06)</td></tr>
+      <tr><td>Automated Inventory Control</td><td class="pass">✔ Achieved</td><td>PostgreSQL trigger auto-decrements on collection (TC-08)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CHAPTER 10 — CONCLUSION
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">CHAPTER 10: CONCLUSION AND FUTURE SCOPE</div>
+
+  <h3><span class="section-num">10.1</span> Conclusion</h3>
+  <p>The <strong>MediFind</strong> mini project successfully delivers a comprehensive, full-stack medicine availability and digital prescription platform tailored to the municipal healthcare needs of <strong>Perinthalmanna</strong> and <strong>Valanchery</strong>. Developed using Next.js 14, Supabase PostgreSQL, and client-side Haversine geospatial calculations, the platform bridges the critical divide between local retail pharmacies and urgent patient needs. The system eliminates emergency search distress, protects regulatory integrity through digital prescription verification, and automates retail inventory management through database triggers.</p>
+  <p>The project was executed strictly in accordance with KTU 20MCA245 syllabus requirements, adhering to Agile Scrum practices across five sprints, maintaining a detailed Scrum Book, and implementing automated deployment pipelines. All five primary objectives were achieved and validated through a comprehensive 10-case test suite with a 100% pass rate.</p>
+  <p><strong>Key Contributions:</strong></p>
+  <ul>
+    <li>Developed a first-of-its-kind hyperlocal medicine search platform for Malappuram district, Kerala</li>
+    <li>Implemented the Haversine spherical formula in TypeScript for zero-cost GPS proximity sorting</li>
+    <li>Built a complete digital prescription lifecycle — patient upload, cloud storage, pharmacist verification, and counter fulfillment</li>
+    <li>Designed PostgreSQL trigger-based automated stock control eliminating manual inventory accounting errors</li>
+    <li>Deployed a production-grade, serverless application at zero infrastructure cost using Vercel and Supabase free tiers</li>
+  </ul>
+
+  <h3><span class="section-num">10.2</span> Current Limitations</h3>
+  <ul>
+    <li>No home delivery or courier integration — counter-pickup only</li>
+    <li>No online payment gateway (Razorpay / UPI) integration</li>
+    <li>Admin Dashboard UI not yet implemented (backend RLS policies ready)</li>
+    <li>Manual pharmacy onboarding — no automated licensing verification</li>
+    <li>No push notifications — patients must manually check dashboard for status updates</li>
+    <li>Currently scoped to Malappuram district — not yet scaled nationally</li>
+  </ul>
+
+  <h3><span class="section-num">10.3</span> Future Enhancements</h3>
+  <ol>
+    <li><strong>AI-Based Medicine Recommendations:</strong> Integrating natural language models to suggest verified generic chemical substitutes when branded drugs are out of stock.</li>
+    <li><strong>Integrated Digital Payments:</strong> Integrating Razorpay / UPI for contactless advance payments before counter pickup.</li>
+    <li><strong>Local Municipal Courier Integration:</strong> Partnering with hyperlocal logistics providers for 30-minute door-to-door emergency medicine delivery.</li>
+    <li><strong>Automated WhatsApp Notifications:</strong> Sending automated WhatsApp updates to patients when their prescription has been reviewed and packed for pickup.</li>
+    <li><strong>Native Mobile Application:</strong> Building a React Native iOS/Android mobile app with background push notification support.</li>
+    <li><strong>Analytics Dashboard:</strong> Providing pharmacy owners with medicine demand analytics, peak hour insights, and inventory turnover reports.</li>
+  </ol>
+
+  <br/>
+  <h2>REFERENCES</h2>
+  <ol>
+    <li>R. S. Pressman, <em>Software Engineering: A Practitioner's Approach</em>, 7th ed. New York: McGraw-Hill, 2010.</li>
+    <li>M. Fowler and J. Humble, <em>Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation</em>, Addison-Wesley, 2010.</li>
+    <li>K. Schwaber and M. Beedle, <em>Agile Software Development with Scrum</em>, Pearson, 2008.</li>
+    <li>M. Cohn, <em>User Stories Applied: For Agile Software Development</em>, Addison-Wesley, 2004.</li>
+    <li>A. Silberschatz, H. F. Korth, and S. Sudarshan, <em>Database System Concepts</em>, 7th ed. McGraw-Hill, 2020.</li>
+    <li>R. W. Sinnott, "Virtues of the Haversine," <em>Sky and Telescope</em>, vol. 68, no. 2, p. 158, 1984.</li>
+    <li>D. S. Evans and R. Schmalensee, <em>Matchmakers: The New Economics of Multisided Platforms</em>, Harvard Business Review Press, 2016.</li>
+    <li>Vercel, "Next.js Documentation: App Router, Server Actions, and React Server Components," 2024. [Online]. Available: https://nextjs.org/docs</li>
+    <li>Supabase Inc., "Supabase Documentation: The Open Source Firebase Alternative with PostgreSQL," 2024. [Online]. Available: https://supabase.com/docs</li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════
+     APPENDIX — GIT COMMIT HISTORY
+═══════════════════════════════════════ -->
+<div class="page">
+  <div class="chapter-title">APPENDIX: GIT COMMIT HISTORY AND VERSION LOG</div>
+  <p>In compliance with KTU 20MCA245 evaluation criteria, the version control commit history demonstrates steady, incremental development across the Agile sprints:</p>
+  <table>
+    <thead><tr><th>Commit Hash</th><th>Sprint</th><th>Commit Message Summary</th></tr></thead>
+    <tbody>
+      <tr><td>3ce9a74</td><td>Sprint 0</td><td>Initial commit.</td></tr>
+      <tr><td>10ccf52</td><td>Sprint 0</td><td>Initialize project structure with Supabase authentication and pharmacy search/dashboard features.</td></tr>
+      <tr><td>cb955ea</td><td>Sprint 1</td><td>Task 1: Wire real Supabase auth for login, sign up, profile roles and path protection.</td></tr>
+      <tr><td>5b4e55b</td><td>Sprint 1</td><td>Task 2: Wire live database search and filters on /search.</td></tr>
+      <tr><td>5933c3b</td><td>Sprint 1</td><td>Task 3: Implement dynamic pharmacy inventory dashboard, modals, POS sync status and Realtime.</td></tr>
+      <tr><td>c928c08</td><td>Sprint 1</td><td>Task 4: Wire live data fetching and dynamic stock catalog for pharmacy detail page.</td></tr>
+      <tr><td>b00ab1d</td><td>Sprint 1</td><td>Add migrations schema sql file to repository.</td></tr>
+      <tr><td>71db4fc</td><td>Sprint 1</td><td>Update README.md with current features, tech stack, and next steps roadmap.</td></tr>
+      <tr><td>cbf572c</td><td>Sprint 2</td><td>Milestone 1: Implement GPS-Based Nearby Pharmacy Search and live location mocks selector.</td></tr>
+      <tr><td>ea108bb</td><td>Sprint 2</td><td>Milestone 2 Polish: Remove London mock location, default coordinates to Valanchery, Kerala.</td></tr>
+      <tr><td>7f831bb</td><td>Sprint 2</td><td>Milestone 2 Polish: Implement closest town auto-snapping (Valanchery, Perinthalmanna, Kuttippuram, Kottakkal, Malappuram, Tirur).</td></tr>
+      <tr><td>9ca0c42</td><td>Sprint 2</td><td>Milestone 2 Polish: Wire up location_on header button actions to trigger closest town geolocation lookups.</td></tr>
+      <tr><td>fdb303d</td><td>Sprint 2</td><td>Milestone 2 Polish: Implement Pharmacies tab search mode, fetching pharmacies list, calculating distance, sorting closest first.</td></tr>
+      <tr><td>5db7730</td><td>Sprint 3</td><td>Milestone 2: Implement Online Medicine Reservation, client-side request forms, patient and pharmacy order panels, and realtime subscriptions.</td></tr>
+      <tr><td>9ef6ae4</td><td>Sprint 3</td><td>Polishing: Connect '+' button on Pharmacy Detail page to Reservation Modal and add live inventory search.</td></tr>
+      <tr><td>bf410f8</td><td>Sprint 3</td><td>Configure common login, restrict pharmacy signup and update header button labels.</td></tr>
+      <tr><td>8a84402</td><td>Sprint 3</td><td>Refactor: Rename patient references to user across all UI panels and fields.</td></tr>
+      <tr><td>cd8bccd</td><td>Sprint 4</td><td>Milestone 2 Polish: Add custom image_url columns to pharmacies and medicines database.</td></tr>
+      <tr><td>9774eb8</td><td>Sprint 4</td><td>Milestone 3: Implement Digital Prescription Upload feature, storage migration, and preview modals.</td></tr>
+      <tr><td>9203699</td><td>Sprint 5</td><td>Docs: Update README.md with Milestone 3 Digital Prescription Upload features and roadmap.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

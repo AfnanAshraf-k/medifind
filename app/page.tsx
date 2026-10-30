@@ -1,35 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import NavBar from "@/app/components/NavBar";
+import { DEFAULT_TOWNS, Town, findClosestTown } from "@/lib/locations";
 
 export default function HomePage() {
   const router = useRouter();
+  const [towns, setTowns] = useState<Town[]>(DEFAULT_TOWNS);
 
-  const KNOWN_TOWNS = [
-    { name: "Valanchery", lat: 10.8878, lng: 76.0732 },
-    { name: "Perinthalmanna", lat: 10.9765, lng: 76.2269 },
-    { name: "Kuttippuram", lat: 10.8407, lng: 76.0331 },
-    { name: "Kottakkal", lat: 10.9992, lng: 75.9926 },
-    { name: "Malappuram", lat: 11.0735, lng: 76.0740 },
-    { name: "Tirur", lat: 10.9027, lng: 75.9238 }
-  ];
-
-  function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const R = 3958.8; // Radius of the Earth in miles
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in miles
-  }
+  useEffect(() => {
+    async function loadTowns() {
+      try {
+        const res = await fetch("/api/towns");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.towns && data.towns.length > 0) {
+            setTowns(data.towns);
+          }
+        }
+      } catch (e) {
+        // Fallback to DEFAULT_TOWNS
+      }
+    }
+    loadTowns();
+  }, []);
 
   const [q, setQ] = useState("");
   const [locating, setLocating] = useState(false);
@@ -41,37 +37,28 @@ export default function HomePage() {
     setLocating(true);
     setLocationStatus("Locating...");
 
-    if (navigator.geolocation) {
+    if (typeof window !== "undefined" && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const userLat = position.coords.latitude;
           const userLng = position.coords.longitude;
           setGpsLocation({ lat: userLat, lng: userLng });
 
-          // Find closest town from KNOWN_TOWNS
-          let closestTown = KNOWN_TOWNS[0];
-          let minDistance = Infinity;
-          
-          KNOWN_TOWNS.forEach(town => {
-            const d = getDistance(userLat, userLng, town.lat, town.lng);
-            if (d < minDistance) {
-              minDistance = d;
-              closestTown = town;
-            }
-          });
+          // Find closest town from dynamic towns list using km Haversine formula
+          const { town, distanceKm } = findClosestTown(userLat, userLng, towns);
 
-          setLocationStatus(`Near ${closestTown.name}`);
+          setLocationStatus(`Near ${town.name} (${distanceKm.toFixed(1)} km)`);
           setLocating(false);
         },
         (error) => {
           console.error("Geolocation error:", error);
-          setLocationStatus("Location Error");
+          setLocationStatus("Valanchery (Default)");
           setLocating(false);
         },
         { enableHighAccuracy: true, timeout: 5000 }
       );
     } else {
-      setLocationStatus("Not Supported");
+      setLocationStatus("Valanchery (Default)");
       setLocating(false);
     }
   };
@@ -81,17 +68,8 @@ export default function HomePage() {
     let url = `/search?q=${encodeURIComponent(q)}`;
     if (gpsLocation) {
       url += `&lat=${gpsLocation.lat}&lng=${gpsLocation.lng}`;
-      // Find closest town to attach as label
-      let closestTown = KNOWN_TOWNS[0];
-      let minDistance = Infinity;
-      KNOWN_TOWNS.forEach(town => {
-        const d = getDistance(gpsLocation.lat, gpsLocation.lng, town.lat, town.lng);
-        if (d < minDistance) {
-          minDistance = d;
-          closestTown = town;
-        }
-      });
-      url += `&town=${encodeURIComponent("Near " + closestTown.name)}`;
+      const { town } = findClosestTown(gpsLocation.lat, gpsLocation.lng, towns);
+      url += `&town=${encodeURIComponent(town.name)}`;
     }
     router.push(url);
   };
@@ -103,7 +81,7 @@ export default function HomePage() {
           <button
             onClick={handleGetLocation}
             title="Detect current location"
-            className="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-variant rounded-full transition-all border-none bg-transparent"
+            className="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-variant rounded-full transition-all border-none bg-transparent cursor-pointer"
           >
             location_on
           </button>
@@ -123,14 +101,13 @@ export default function HomePage() {
           </div>
           <div className="relative z-10 max-w-4xl w-full text-center py-xl">
             <span className="inline-block py-1 px-3 rounded-full bg-secondary-container text-on-secondary-container font-label-sm mb-md uppercase tracking-wider">
-              Trusted Clinical Network
+              Trusted Clinical Network • Kerala, India
             </span>
             <h1 className="font-display text-display text-on-surface mb-lg leading-tight">
               Find critical medication in seconds.
             </h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant mb-xl max-w-2xl mx-auto">
-              Real-time inventory tracking across our network of certified partner pharmacies. No more calling around or
-              unnecessary trips.
+              Real-time inventory tracking across certified partner pharmacies in Valanchery, Perinthalmanna, and throughout Kerala. Instant medicine reserve with transparent INR (₹) pricing.
             </p>
 
             <form
@@ -142,7 +119,7 @@ export default function HomePage() {
                 <input
                   name="q"
                   className="w-full border-none focus:ring-0 bg-transparent py-4 text-body-md placeholder:text-outline text-on-surface"
-                  placeholder="Search for medicine, brand, or pharmacy..."
+                  placeholder="Search medicine by name or formula (e.g. Paracetamol, Dolo 650, Insulin)..."
                   type="text"
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
@@ -162,7 +139,7 @@ export default function HomePage() {
               </div>
               <button
                 type="submit"
-                className="bg-primary text-on-primary px-xl py-4 rounded-lg font-headline-md hover:bg-primary/90 transition-all shadow-md active:scale-95"
+                className="bg-primary text-on-primary px-xl py-4 rounded-lg font-headline-md hover:bg-primary/90 transition-all shadow-md active:scale-95 cursor-pointer"
               >
                 Search
               </button>
@@ -176,7 +153,7 @@ export default function HomePage() {
                 <span className="material-symbols-outlined text-sm">schedule</span> Real-time Updates
               </span>
               <span className="font-label-md flex items-center gap-xs">
-                <span className="material-symbols-outlined text-sm">health_and_safety</span> Certified Pharmacies
+                <span className="material-symbols-outlined text-sm">health_and_safety</span> Certified Kerala Pharmacies
               </span>
             </div>
           </div>
@@ -192,11 +169,6 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
             <div
               className="bento-card bg-surface border border-outline-variant rounded-xl p-lg flex flex-col justify-between"
-              style={{
-                opacity: "1",
-                transform: "translateY(0px)",
-                transition: "opacity 0.6s ease-out, transform 0.6s ease-out",
-              }}
             >
               <div>
                 <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center mb-md">
@@ -214,11 +186,6 @@ export default function HomePage() {
 
             <div
               className="bento-card bg-primary text-on-primary rounded-xl p-lg flex flex-col justify-between md:scale-105 shadow-xl z-10"
-              style={{
-                opacity: "1",
-                transform: "translateY(0px)",
-                transition: "opacity 0.6s ease-out, transform 0.6s ease-out",
-              }}
             >
               <div>
                 <div className="w-12 h-12 rounded-full bg-on-primary/20 flex items-center justify-center mb-md">
@@ -226,7 +193,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="font-headline-md text-headline-md mb-md">Locate</h3>
                 <p className="opacity-90">
-                  View available stock on an interactive map. Compare prices and check pharmacy hours in one place.
+                  View available stock on an interactive Kerala map. Compare INR (₹) prices and view kilometer distances in one place.
                 </p>
               </div>
               <div className="mt-xl pt-lg border-t border-on-primary/20 flex items-center gap-sm">
@@ -237,11 +204,6 @@ export default function HomePage() {
 
             <div
               className="bento-card bg-surface border border-outline-variant rounded-xl p-lg flex flex-col justify-between"
-              style={{
-                opacity: "1",
-                transform: "translateY(0px)",
-                transition: "opacity 0.6s ease-out, transform 0.6s ease-out",
-              }}
             >
               <div>
                 <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center mb-md">
@@ -253,7 +215,7 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="mt-xl pt-lg border-t border-outline-variant/30 italic text-label-sm text-outline">
-                Secure checkout available
+                Secure pickup verification
               </div>
             </div>
           </div>
@@ -272,7 +234,7 @@ export default function HomePage() {
             <div className="space-y-lg">
               <h2 className="font-headline-lg text-headline-lg">Clinical reliability in the palm of your hand</h2>
               <p className="text-body-lg text-on-surface-variant">
-                We understand that getting your medication is not just about convenience—it's about health and peace of mind.
+                We understand that getting your medication is not just about convenience—it's about health and peace of mind in acute emergencies.
               </p>
               <ul className="space-y-md">
                 <li className="flex items-start gap-md">
@@ -280,25 +242,25 @@ export default function HomePage() {
                   <div>
                     <span className="font-headline-md text-headline-md block">Zero Guesswork</span>
                     <span className="text-body-md text-on-surface-variant">
-                      Know exactly which pharmacy has your specific brand and dosage in stock.
+                      Know exactly which pharmacy in Valanchery, Perinthalmanna, or nearby towns has your specific medicine in stock.
                     </span>
                   </div>
                 </li>
                 <li className="flex items-start gap-md">
                   <span className="material-symbols-outlined text-primary mt-1">check_circle</span>
                   <div>
-                    <span className="font-headline-md text-headline-md block">Price Transparency</span>
+                    <span className="font-headline-md text-headline-md block">Price Transparency in INR (₹)</span>
                     <span className="text-body-md text-on-surface-variant">
-                      Compare pharmacy prices and find the most cost-effective option for your prescription.
+                      Compare actual pharmacy retail prices in Indian Rupees without hidden surcharges.
                     </span>
                   </div>
                 </li>
                 <li className="flex items-start gap-md">
                   <span className="material-symbols-outlined text-primary mt-1">check_circle</span>
                   <div>
-                    <span className="font-headline-md text-headline-md block">Critical Alerts</span>
+                    <span className="font-headline-md text-headline-md block">Kilometer Distance Guidance</span>
                     <span className="text-body-md text-on-surface-variant">
-                      Get notified the moment a rare or backordered medication becomes available near you.
+                      Accurate driving distances in kilometers and quick turn-by-turn navigation links.
                     </span>
                   </div>
                 </li>
@@ -318,69 +280,52 @@ export default function HomePage() {
             <div>
               <h2 className="font-headline-lg text-headline-lg mb-xs">Partner Pharmacies</h2>
               <p className="text-on-surface-variant">
-                We partner with over 2,500 licensed pharmacies to provide accurate inventory data.
+                Connected with verified licensed pharmacies across Valanchery, Perinthalmanna, Kuttippuram, and Malappuram.
               </p>
             </div>
-            <button className="text-primary font-label-md flex items-center gap-xs hover:underline">
-              View full directory <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </button>
+            <Link href="/search?mode=pharmacy" className="text-primary font-label-md flex items-center gap-xs hover:underline">
+              View all pharmacies <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-lg">
             <div className="bg-surface border border-outline-variant p-xl rounded-xl flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 bg-surface-variant rounded-full mb-md flex items-center justify-center">
                 <span className="material-symbols-outlined text-primary text-3xl">local_pharmacy</span>
               </div>
-              <span className="font-label-md text-on-surface">City Central</span>
-              <span className="text-label-sm text-outline">12 Locations</span>
+              <span className="font-label-md text-on-surface">V Care Pharmacy</span>
+              <span className="text-label-sm text-outline">Valanchery Hub</span>
             </div>
             <div className="bg-surface border border-outline-variant p-xl rounded-xl flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 bg-surface-variant rounded-full mb-md flex items-center justify-center">
                 <span className="material-symbols-outlined text-primary text-3xl">medical_services</span>
               </div>
-              <span className="font-label-md text-on-surface">HealthLink Rx</span>
-              <span className="text-label-sm text-outline">National Partner</span>
+              <span className="font-label-md text-on-surface">SK Pharmacy</span>
+              <span className="text-label-sm text-outline">Perinthalmanna</span>
             </div>
             <div className="bg-surface border border-outline-variant p-xl rounded-xl flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 bg-surface-variant rounded-full mb-md flex items-center justify-center">
                 <span className="material-symbols-outlined text-primary text-3xl">medication</span>
               </div>
-              <span className="font-label-md text-on-surface">PharmaDirect</span>
-              <span className="text-label-sm text-outline">Premium Network</span>
+              <span className="font-label-md text-on-surface">Jan Aushadhi</span>
+              <span className="text-label-sm text-outline">Kuttippuram</span>
             </div>
             <div className="bg-surface border border-outline-variant p-xl rounded-xl flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 bg-surface-variant rounded-full mb-md flex items-center justify-center">
                 <span className="material-symbols-outlined text-primary text-3xl">emergency</span>
               </div>
               <span className="font-label-md text-on-surface">24/7 Meds</span>
-              <span className="text-label-sm text-outline">Emergency Care</span>
+              <span className="text-label-sm text-outline">Malappuram Central</span>
             </div>
           </div>
           <div className="mt-xl p-lg bg-surface-container-highest rounded-2xl flex flex-col md:flex-row items-center justify-between gap-lg">
             <div className="flex items-center gap-lg">
-              <div className="flex -space-x-3">
-                <img
-                  className="w-12 h-12 rounded-full border-2 border-surface object-cover"
-                  alt="Pharmacist smiling"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxQCgm9S5ruSs1ArXUosX5UxqlmXqTpa6WYm6YMMvYMxs7Ld7bk7bUs3ZcD5GlWuuiCM9BurcdUQF47ma8nUODDEpss_3klme2Fwcj7efW7L07wFTy9vi0XvgRJ0CmRGJq0fsHhfsIILslT4DxzEYc4tgZJqKeDNxdjtHH3l0y3-V_rzFwoCbsWvLEYuLcXQB5FeT9YXCizBLeoT7njnJO8oXOl99T5OfLbOSQcCMoRfI0M2hr3Zds"
-                />
-                <img
-                  className="w-12 h-12 rounded-full border-2 border-surface object-cover"
-                  alt="Pharmacist with glasses"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtfBi7SEwORlGivQh_X-TAN2avQZ-53g7TILD-5cbspwY3gQNQjzhUNGNUIMoDCgYOZD9uLYckIUmNNGN8Tu8iqzr6P1eHKbCnKsI3UXhkyh_BeoRaHqY9Ah3TFZk6q1CNZbOtUBBvzBX_sUYogE9ueqM7pd8BOrDDJA5c4oneUwK3OUcW7Mkc_U6oiOVdnfFyEVd-gRv33-UsIXSCwmQtUK-QXjKU3qf-VN7nmkY_XZmfHFOr1mV5"
-                />
-                <img
-                  className="w-12 h-12 rounded-full border-2 border-surface object-cover"
-                  alt="Young pharmacist"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUlGwcTw9QuGVwE9KayrgLitw_XPQW8EYQ4rJKrWUZQ6BCvFVEsw2bFVp1mce9uozxZ-iLxe-9gCN3r8GwgSMLozmFANeWeTXNAx0pvT8kVJLTgrS0Ep9XFyQKPzpJq98mhXymEOoq6B15cil0EEV_dUEthDJ0CqZ2GqdhLzfFk57rarhb2chTH4l-EltcpVUhKYh205kF2JMhB_Lqcvckar2w5hBcYr_Vu3qot7gc-ogu17nHF1YE"
-                />
-              </div>
-              <p className="text-on-surface-variant font-body-md">Join 500+ pharmacies joining MediFind this month.</p>
+              <p className="text-on-surface-variant font-body-md">Are you a registered retail pharmacy owner in Kerala?</p>
             </div>
             <Link
               href="/login?signup=true"
               className="bg-primary text-on-primary px-xl py-md rounded-lg font-label-md whitespace-nowrap shadow-md active:scale-95 transition-all inline-block text-center"
             >
-              Become a Partner Pharmacy
+              Register Your Pharmacy
             </Link>
           </div>
         </section>
@@ -400,7 +345,7 @@ export default function HomePage() {
               Terms of Service
             </Link>
             <Link className="text-on-surface-variant text-label-sm font-label-sm hover:text-on-surface transition-colors" href="/support">
-              Contact Pharmacy Support
+              Contact Support
             </Link>
           </div>
         </div>
