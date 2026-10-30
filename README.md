@@ -73,6 +73,9 @@ The project demonstrates important web development concepts such as user authent
    - Dynamic Image URLs: `0003_image_urls.sql`
    - Prescription Upload & Storage Bucket: `0004_prescription_upload.sql`
    - Admin RBAC, Pharmacy Approvals & Reservation Expiry: `0005_admin_approvals_and_expiry.sql`
+   - Regional Towns & GPS Map Snapping: `0006_towns_and_locations.sql`
+   - Admin Medicine Delete Policy & RPC: `0007_admin_medicine_delete_policy.sql`
+   - Admin User & Pharmacy Deletion & Reservation Hold: `0008_admin_deletions_and_reservation_hold.sql`
 4. **Seed Super-Admin Account**:
    Run the secure admin seeder script to promote or create your initial administrator account:
    ```bash

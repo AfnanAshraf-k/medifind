@@ -6,11 +6,16 @@
 --    medications while active reservations exist. Stock is released on cancel/expiry.
 -- ==============================================================================
 
--- 1. Allow administrators to delete profiles
+-- 1. Allow administrators to delete and update profiles (suspension & deletion)
 DROP POLICY IF EXISTS "profiles_delete_admin" ON public.profiles;
 CREATE POLICY "profiles_delete_admin"
   ON public.profiles FOR DELETE
   USING (public.current_role() = 'admin');
+
+DROP POLICY IF EXISTS "profiles_update_admin" ON public.profiles;
+CREATE POLICY "profiles_update_admin"
+  ON public.profiles FOR UPDATE
+  USING (id = auth.uid() OR public.current_role() = 'admin');
 
 -- 2. Security Definer Procedure to cleanly delete a pharmacy and its inventory
 CREATE OR REPLACE FUNCTION public.delete_pharmacy_as_admin(pharmacy_id_to_delete uuid)
@@ -27,7 +32,7 @@ DECLARE
 BEGIN
   -- Verify caller is administrator
   v_role := public.current_role();
-  IF v_role IS DISTINCT FROM 'admin' THEN
+  IF v_role IS DISTINCT FROM 'admin' AND (auth.jwt() ->> 'role') IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION 'Forbidden: Only administrators can delete pharmacies (current role: %)', v_role;
   END IF;
 
@@ -80,8 +85,9 @@ DECLARE
   v_email text;
   v_user_role public.app_role;
 BEGIN
+  -- Verify caller is administrator
   v_role := public.current_role();
-  IF v_role IS DISTINCT FROM 'admin' THEN
+  IF v_role IS DISTINCT FROM 'admin' AND (auth.jwt() ->> 'role') IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION 'Forbidden: Only administrators can delete users (current role: %)', v_role;
   END IF;
 
@@ -116,7 +122,14 @@ BEGIN
   -- Delete audit logs & notifications
   DELETE FROM public.notifications WHERE user_id = user_id_to_delete;
 
-  -- Delete profile
+  -- Delete from auth.users (cascades to public.profiles)
+  BEGIN
+    DELETE FROM auth.users WHERE id = user_id_to_delete;
+  EXCEPTION WHEN OTHERS THEN
+    NULL;
+  END;
+
+  -- Ensure deleted from public.profiles
   DELETE FROM public.profiles WHERE id = user_id_to_delete;
 
   RETURN jsonb_build_object(
